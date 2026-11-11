@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-th="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>منظومة الصادر والوارد — مراقبة التربية والتعليم سلوق</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#070b12">
+<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<style>
+@font-face{font-family:Amiri;src:url(fonts/amiri-400.woff2) format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:Amiri;src:url(fonts/amiri-700.woff2) format('woff2');font-weight:700;font-display:swap}
+:root{color-scheme:dark;--bg:#070b12;--card:rgba(255,255,255,.055);--bd:rgba(255,255,255,.11);--tx:#eef2f7;--mut:#94a1b5;--gold:#d9b25f;--grn:#22c55e;--red:#ef4444;--blu:#38bdf8;--in:#38bdf8;--out:#f59e0b}
+[data-th=light]{color-scheme:light;--bg:#eef2f8;--card:rgba(255,255,255,.85);--bd:rgba(0,0,0,.12);--tx:#111a2b;--mut:#5a6578;--gold:#a67c1f}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{font:400 19px/1.7 Amiri,serif;color:var(--tx);background:var(--bg);min-height:100vh;padding-bottom:90px;
+background-image:radial-gradient(ellipse 60% 40% at 85% -5%,rgba(34,197,94,.16),transparent),radial-gradient(ellipse 50% 40% at 5% 10%,rgba(239,68,68,.12),transparent),radial-gradient(ellipse 60% 50% at 50% 110%,rgba(217,178,95,.14),transparent);background-attachment:fixed}
+button,input,select,textarea{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:16px;padding:18px 22px;max-width:1100px;margin:auto}
+.logo{width:74px;height:74px;border-radius:50%;background:#fff;padding:2px;box-shadow:0 0 0 2px var(--gold),0 0 30px rgba(217,178,95,.5);animation:pulse 4s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 2px var(--gold),0 0 46px rgba(34,197,94,.55)}}
+header h1{font-size:1.55rem;line-height:1.3;font-weight:700}
+header small{color:var(--mut);font-size:1rem;display:block}
+.sp{flex:1}
+.ib{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px 12px;cursor:pointer}
+nav{position:sticky;top:8px;z-index:20;max-width:1100px;margin:0 auto 18px;padding:6px;display:flex;gap:4px;background:var(--card);backdrop-filter:blur(16px);border:1px solid var(--bd);border-radius:20px;overflow-x:auto}
+.tab{flex:1;min-width:84px;position:relative;z-index:1;background:none;border:0;padding:8px 10px;border-radius:14px;cursor:pointer;color:var(--mut);display:flex;flex-direction:column;align-items:center;line-height:1.3;font-weight:700;transition:color .3s}
+.tab span{font-size:1.4rem}.tab.on{color:var(--tx)}
+.tab.dot::after{content:"";position:absolute;top:6px;left:18px;width:10px;height:10px;border-radius:50%;background:var(--grn);box-shadow:0 0 12px var(--grn);animation:pulse2 1.2s infinite}
+@keyframes pulse2{50%{opacity:.3}}
+#ind{position:absolute;top:6px;bottom:6px;border-radius:14px;background:linear-gradient(135deg,rgba(217,178,95,.3),rgba(34,197,94,.22));border:1px solid var(--gold);box-shadow:0 0 22px rgba(217,178,95,.4);transition:all .45s cubic-bezier(.3,1.3,.5,1)}
+main{max-width:1100px;margin:auto;padding:0 18px}
+.pnl.in{animation:sl .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes sl{from{opacity:0;transform:translateY(16px) scale(.985);filter:blur(5px)}}
+.card{position:relative;background:var(--card);border:1px solid var(--bd);border-radius:20px;padding:18px;margin-bottom:16px;overflow:hidden;backdrop-filter:blur(10px)}
+.card::before{content:"";position:absolute;inset:0;background:radial-gradient(260px circle at var(--x,50%) var(--y,-50%),rgba(217,178,95,.16),transparent 70%);opacity:0;transition:opacity .3s;pointer-events:none}
+.card:hover::before{opacity:1}
+h2{font-size:1.4rem;margin-bottom:10px;color:var(--gold)}h3{font-size:1.15rem}
+.g{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.stat{text-align:center}.stat b{display:block;font-size:2.6rem;line-height:1.1;color:var(--c,var(--gold));text-shadow:0 0 20px var(--c,var(--gold))}
+.mut{color:var(--mut)}
+label{display:block;margin:10px 0 4px;font-weight:700}
+input,select,textarea{width:100%;background:rgba(0,0,0,.25);border:1px solid var(--bd);border-radius:12px;padding:9px 12px;outline:0;transition:.25s}
+[data-th=light] input,[data-th=light] select,[data-th=light] textarea{background:#fff}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(217,178,95,.25)}
+select option{color:#111}
+textarea{min-height:80px;resize:vertical}
+.row{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.btn{border:1px solid var(--bd);background:var(--card);border-radius:14px;padding:9px 18px;cursor:pointer;font-weight:700;transition:.25s;display:inline-flex;gap:8px;align-items:center}
+.btn:hover{transform:translateY(-2px);border-color:var(--gold);box-shadow:0 6px 22px rgba(217,178,95,.28)}
+.btn.p{background:linear-gradient(135deg,#b88a2a,#d9b25f);color:#1a1200;border:0;box-shadow:0 0 22px rgba(217,178,95,.4)}
+.btn.g2{background:linear-gradient(135deg,#15803d,#22c55e);color:#031a0b;border:0;box-shadow:0 0 22px rgba(34,197,94,.4)}
+.btn.d{border-color:rgba(239,68,68,.6);color:#fca5a5}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.bd{display:inline-block;padding:0 12px;border-radius:99px;font-size:.9rem;background:rgba(148,163,184,.2)}
+.bd.s0{background:rgba(245,158,11,.22);color:#fbbf24}.bd.s1{background:rgba(34,197,94,.22);color:#4ade80}.bd.urg{background:rgba(239,68,68,.25);color:#fca5a5}
+.rec .rh{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.no{font-size:1.25rem;padding:0 12px;border-radius:10px;border:1px solid currentColor;direction:ltr}.no.in{color:var(--in)}.no.out{color:var(--out)}
+.ra{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.ra .btn{padding:3px 12px;font-size:.95rem}
+.bar{height:12px;border-radius:9px;background:rgba(255,255,255,.1);overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--grn),var(--gold),var(--red));background-size:300px;transition:width .8s}
+.warn{border-color:var(--red);box-shadow:0 0 26px rgba(239,68,68,.35);color:#fecaca}
+.pages{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.pg{background:rgba(0,0,0,.25);border:1px solid var(--bd);border-radius:14px;padding:8px;text-align:center}
+.pg canvas{max-width:100%;max-height:170px;border-radius:6px;background:#fff}
+.pg div{display:flex;gap:4px;justify-content:center;margin-top:6px}.pg button{background:var(--card);border:1px solid var(--bd);border-radius:8px;cursor:pointer;padding:0 7px}
+video{width:100%;max-height:300px;border-radius:14px;background:#000;margin-top:10px}
+.chip{display:inline-flex;gap:8px;align-items:center;padding:3px 14px;border-radius:99px;border:1px solid var(--bd);background:var(--card)}
+.chip.ok{border-color:var(--grn);box-shadow:0 0 16px rgba(34,197,94,.45)}
+.empty{text-align:center;padding:30px;color:var(--mut)}
+#toasts{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:99;display:grid;gap:8px;width:min(92vw,420px)}
+.ts{background:#0f1a2b;color:#fff;border:1px solid var(--gold);border-radius:14px;padding:10px 16px;box-shadow:0 0 24px rgba(217,178,95,.4);animation:sl .4s}
+dialog{margin:auto;border:1px solid var(--gold);border-radius:20px;background:#0c1524;color:#fff;padding:22px;width:min(92vw,400px);box-shadow:0 0 60px rgba(217,178,95,.35)}
+dialog::backdrop{background:rgba(0,0,0,.65);backdrop-filter:blur(4px)}
+footer{text-align:center;color:var(--mut);padding:16px;font-size:1rem}footer b{color:var(--gold)}
+#printArea{display:none}
+@media print{body>*:not(#printArea){display:none!important}#printArea{display:block;color:#000;background:#fff;padding:30px;text-align:center}#printArea .no{font-size:2.4rem;color:#000}}
+@media(max-width:700px){body{font-size:18px}nav{position:fixed;top:auto;bottom:8px;left:8px;right:8px;margin:0}header{padding:12px}.logo{width:60px;height:60px}header h1{font-size:1.2rem}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+<img class="logo" src="logo.jpg" alt="شعار مراقبة التربية والتعليم سلوق">
+<div><h1>منظومة الصادر والوارد</h1><small>مراقبة التربية والتعليم — بلدية سلوق</small></div>
+<span class="sp"></span>
+<button class="ib" id="inst" hidden>⬇ تثبيت</button>
+<button class="ib" id="th" title="تبديل الوضع">🌙</button>
+</header>
+<nav id="nav"><i id="ind"></i>
+<button class="tab" data-t="home"><span>🏠</span>الرئيسية</button>
+<button class="tab" data-t="in"><span>📥</span>وارد جديد</button>
+<button class="tab" data-t="out"><span>📤</span>صادر جديد</button>
+<button class="tab" data-t="scan" id="tscan"><span>🖨️</span>الماسح الضوئي</button>
+<button class="tab" data-t="arch"><span>🗄️</span>الأرشيف</button>
+<button class="tab" data-t="set"><span>⚙️</span>الإعدادات</button>
+</nav>
+<main>
+<section class="pnl" id="p-home">
+<div id="warn"></div>
+<div class="g" id="stats"></div>
+<div class="btns" style="margin:0 0 16px"><button class="btn p" onclick="go('in')">📥 تسجيل وارد</button><button class="btn p" onclick="go('out')">📤 تسجيل صادر</button><button class="btn g2" onclick="go('scan')">🖨️ مسح مستند</button></div>
+<div class="card"><h2>مساحة الأرشيف</h2><div class="bar"><i id="bar"></i></div><p class="mut" id="barT"></p></div>
+<div class="card"><h2>آخر المراسلات</h2><div id="latest"></div></div>
+</section>
+<section class="pnl" id="p-in" hidden></section>
+<section class="pnl" id="p-out" hidden></section>
+<section class="pnl" id="p-scan" hidden>
+<div class="card"><h2>الماسح الضوئي</h2>
+<p class="chip" id="devChip">⚪ جارٍ البحث عن أجهزة…</p>
+<p class="mut" style="margin-top:8px">اختر طريقة المسح: كاميرا / ماسح يظهر ككاميرا، أو مراقبة مجلد الماسح (تحويل تلقائي)، أو استيراد صور جاهزة.</p>
+<div class="g" style="margin-top:12px">
+<div class="card" style="margin:0"><h3>📷 كاميرا أو ماسح USB</h3><select id="devSel"></select><div class="btns"><button class="btn g2" id="camGo">تشغيل</button><button class="btn p" id="camSnap" hidden>التقاط صفحة</button><button class="btn d" id="camStop" hidden>إيقاف</button></div><video id="vid" playsinline autoplay muted hidden></video></div>
+<div class="card" style="margin:0"><h3>📁 مراقبة مجلد الماسح</h3><p class="mut">اجعل الماسح يحفظ في مجلد، واخترْه هنا؛ كل ورقة جديدة تُضاف فورًا.</p><div class="btns"><button class="btn g2" id="watchBtn">اختيار المجلد</button></div><p class="mut" id="watchSt"></p></div>
+<div class="card" style="margin:0"><h3>🖼️ استيراد ملفات</h3><p class="mut">صور أو ملفات PDF من الجهاز.</p><div class="btns"><button class="btn p" onclick="$('#impF').click()">اختيار ملفات</button></div><input type="file" id="impF" accept="image/*,application/pdf" multiple hidden></div>
+</div></div>
+<div class="card"><h2>الصفحات الممسوحة <span class="mut" id="pgN"></span></h2>
+<div class="row" style="margin-bottom:12px"><div><label>تحسين الصورة</label><select id="mode"><option value="enh">مستند واضح (موصى به)</option><option value="bw">أبيض وأسود</option><option value="orig">الأصل بالألوان</option></select></div><div><label>تحويل فوري إلى PDF</label><select id="auto"><option value="1">مفعّل — يتحول بعد كل مسح</option><option value="0">يدوي</option></select></div></div>
+<div class="pages" id="pages"></div>
+<div class="btns"><button class="btn p" id="mkPdf">📄 تحويل إلى PDF</button><button class="btn d" id="clrPg">مسح القائمة</button></div></div>
+<div class="card" id="res" hidden><h2>ملف PDF جاهز ✅</h2><p id="resT"></p>
+<div class="btns"><button class="btn g2" id="resDl">⬇ تنزيل</button><button class="btn" id="resView">👁 معاينة</button></div>
+<label>إرفاق بـ</label><select id="attachTo"></select></div>
+</section>
+<section class="pnl" id="p-arch" hidden>
+<div class="card"><div class="row"><input id="q" placeholder="🔍 ابحث بالرقم أو الموضوع أو الجهة…"><select id="ft"><option value="">وارد وصادر</option><option value="in">الوارد فقط</option><option value="out">الصادر فقط</option></select><select id="fs"><option value="">كل الحالات</option><option>قيد الإجراء</option><option>منجز</option><option>مؤرشف</option></select></div>
+<div class="btns"><button class="btn" id="csv">📊 تصدير جدول (CSV)</button><span class="mut" id="cnt"></span></div></div>
+<div id="list"></div><input type="file" id="rowF" accept="image/*,application/pdf" hidden>
+</section>
+<section class="pnl" id="p-set" hidden>
+<div class="card"><h2>النسخ الاحتياطي</h2><p class="mut">حمّل نسخة كاملة من الأرشيف (بيانات + ملفات PDF) واحتفظ بها، ويمكنك استرجاعها لاحقًا.</p>
+<div class="btns"><button class="btn g2" id="bk">⬇ تحميل نسخة كاملة</button><button class="btn" onclick="$('#rs').click()">⬆ استرجاع نسخة</button></div><input type="file" id="rs" accept=".json" hidden></div>
+<div class="card"><h2>تفريغ الأرشيف</h2><p class="mut">عند امتلاء الذاكرة: تُحمَّل نسخة تلقائيًا ثم يُفرَّغ الأرشيف بكلمة السر، ويستمر الترقيم دون تكرار.</p><div class="btns"><button class="btn d" id="purge">🗑️ تحميل ثم تفريغ الأرشيف</button></div>
+<label>الحد الأقصى للأرشيف (ميجابايت) — للتنبيه قبل الامتلاء</label><input type="number" id="lim" min="20"></div>
+<div class="card"><h2>كلمة السر</h2><div class="btns"><button class="btn" id="chpw">🔑 تغيير كلمة السر</button></div></div>
+</section>
+</main>
+<footer>© منظومة الصادر والوارد — مراقبة التربية والتعليم بلدية سلوق<br>تطوير: <b>يحيى التيغي</b></footer>
+<div id="toasts"></div>
+<dialog id="dlg"><h2 id="dt"></h2><p id="dm" class="mut"></p><input id="di" autocomplete="off"><div class="btns"><button class="btn p" id="dok">موافق</button><button class="btn" id="dno">إلغاء</button></div></dialog>
+<div id="printArea"></div>
+<script>
+const $=(s,e=document)=>e.querySelector(s),$$=(s,e=document)=>[...e.querySelectorAll(s)];
+const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const T={in:{n:'وارد',pre:'و',party:'الجهة المرسِلة',ph:'من أي جهة وصل الكتاب؟'},out:{n:'صادر',pre:'ص',party:'الجهة المرسَل إليها',ph:'إلى أي جهة سيُرسل الكتاب؟'}};
+const ST=['قيد الإجراء','منجز','مؤرشف'];
+const S={pages:[],pdf:null,draft:{in:null,out:null},target:null,stream:null,dir:null,timer:null};
+const DB={db:null,
+open(){return new Promise((ok,no)=>{const r=indexedDB.open('sulug-mail',1);r.onupgradeneeded=()=>{r.result.createObjectStore('records',{keyPath:'id',autoIncrement:true});r.result.createObjectStore('meta')};r.onsuccess=()=>{this.db=r.result;ok()};r.onerror=()=>no(r.error)})},
+tx(st,m,fn){return new Promise((ok,no)=>{const t=this.db.transaction(st,m),rq=fn(t.objectStore(st));t.oncomplete=()=>ok(rq&&rq.result);t.onerror=()=>no(t.error)})},
+all(){return this.tx('records','readonly',s=>s.getAll())},put(r){return this.tx('records','readwrite',s=>s.put(r))},del(id){return this.tx('records','readwrite',s=>s.delete(id))},clear(){return this.tx('records','readwrite',s=>s.clear())},
+get(k){return this.tx('meta','readonly',s=>s.get(k))},set(k,v){return this.tx('meta','readwrite',s=>s.put(v,k))},
+metaAll(){return new Promise(ok=>{const s=this.db.transaction('meta').objectStore('meta'),k=s.getAllKeys(),v=s.getAll();v.onsuccess=()=>{const o={};k.result.forEach((x,i)=>o[x]=v.result[i]);ok(o)}})}};
+function toast(m){const d=document.createElement('div');d.className='ts';d.textContent=m;$('#toasts').append(d);setTimeout(()=>d.remove(),3400)}
+function ask(t,m,type='password'){return new Promise(res=>{const d=$('#dlg'),i=$('#di');$('#dt').textContent=t;$('#dm').textContent=m;i.type=type;i.value='';d.showModal();i.focus();const f=v=>{d.close();res(v)};$('#dok').onclick=()=>f(i.value);$('#dno').onclick=()=>f(null);i.onkeydown=e=>e.key==='Enter'&&f(i.value);d.oncancel=()=>f(null)})}
+async function H(s){s='sulug|'+s;if(window.crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}let h=5381;for(const c of s)h=(h*33)^c.charCodeAt(0);return'f'+(h>>>0)}
+async function newPass(){const a=await ask('إنشاء كلمة سر','اكتب كلمة سر جديدة (لن تُطلب إلا للحذف والتفريغ):');if(!a)return false;const b=await ask('تأكيد كلمة السر','أعد كتابتها:');if(a!==b){toast('❌ كلمتا السر غير متطابقتين');return false}await DB.set('pw',await H(a));toast('✅ تم حفظ كلمة السر');return true}
+async function verify(why){const h=await DB.get('pw');if(!h)return newPass();const p=await ask('🔒 كلمة السر',why);if(p===null)return false;if(await H(p)===h)return true;toast('❌ كلمة السر خاطئة');return false}
+function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),9e3)}
+const today=()=>new Date().toISOString().slice(0,10),stamp=()=>new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
+const sz=b=>b<1048576?(b/1024).toFixed(0)+' ك.ب':(b/1048576).toFixed(1)+' م.ب';
+/* ===== PDF ===== */
+function buildPDF(js){const en=new TextEncoder(),parts=[],offs=[];let len=0;const push=d=>{if(typeof d==='string')d=en.encode(d);parts.push(d);len+=d.length};const obj=(n,f)=>{offs[n]=len;push(`${n} 0 obj\n`);f();push('\nendobj\n')};
+push('%PDF-1.4\n');obj(1,()=>push('<</Type/Catalog/Pages 2 0 R>>'));obj(2,()=>push(`<</Type/Pages/Kids[${js.map((_,i)=>`${3+i*3} 0 R`).join(' ')}]/Count ${js.length}>>`));
+js.forEach((j,i)=>{const p=3+i*3,W=595,Hh=842,s=Math.min(W/j.w,Hh/j.h),w=j.w*s,h=j.h*s,c=`q ${w.toFixed(2)} 0 0 ${h.toFixed(2)} ${((W-w)/2).toFixed(2)} ${((Hh-h)/2).toFixed(2)} cm /I Do Q`;
+obj(p,()=>push(`<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${W} ${Hh}]/Contents ${p+1} 0 R/Resources<</XObject<</I ${p+2} 0 R>>>>>>`));obj(p+1,()=>push(`<</Length ${c.length}>>\nstream\n${c}\nendstream`));
+obj(p+2,()=>{push(`<</Type/XObject/Subtype/Image/Width ${j.w}/Height ${j.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${j.bytes.length}>>\nstream\n`);push(j.bytes);push('\nendstream')})});
+const tot=3+js.length*3,xr=len;push(`xref\n0 ${tot}\n0000000000 65535 f \n`);for(let i=1;i<tot;i++)push(String(offs[i]).padStart(10,'0')+' 00000 n \n');push(`trailer\n<</Size ${tot}/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`);return new Blob(parts,{type:'application/pdf'})}
+function renderPage(p,src=p.src){const r=p.rot%2,w=r?src.height:src.width,h=r?src.width:src.height,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.translate(w/2,h/2);x.rotate(p.rot*Math.PI/2);x.drawImage(src,-src.width/2,-src.height/2);x.setTransform(1,0,0,1,0,0);
+if(p.mode!=='orig'){const d=x.getImageData(0,0,w,h),a=d.data;for(let i=0;i<a.length;i+=4){let g=.299*a[i]+.587*a[i+1]+.114*a[i+2];g=p.mode==='bw'?(g>150?255:0):Math.max(0,Math.min(255,(g-105)*1.7+130));a[i]=a[i+1]=a[i+2]=g}x.putImageData(d,0,0)}return c}
+async function mkPage(f){const bm=await createImageBitmap(f),k=Math.min(1,2200/Math.max(bm.width,bm.height)),c=document.createElement('canvas');c.width=bm.width*k;c.height=bm.height*k;c.getContext('2d').drawImage(bm,0,0,c.width,c.height);const t=document.createElement('canvas'),tk=260/Math.max(c.width,c.height);t.width=c.width*tk;t.height=c.height*tk;t.getContext('2d').drawImage(c,0,0,t.width,t.height);return{src:c,th:t,rot:0,mode:$('#mode').value}}
+async function pagesToPdf(pg){const js=[];for(const p of pg){const c=renderPage(p),b=await new Promise(r=>c.toBlob(r,'image/jpeg',.86));js.push({bytes:new Uint8Array(await b.arrayBuffer()),w:c.width,h:c.height})}return buildPDF(js)}
+const isPdf=f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name);
+async function toPdf(f){return isPdf(f)?f:pagesToPdf([await mkPage(f)])}
+/* ===== nav ===== */
+function moveInd(){const t=$('.tab.on'),i=$('#ind');if(t){i.style.width=t.offsetWidth+'px';i.style.right='auto';i.style.left=t.offsetLeft+'px'}}
+function go(t){$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$$('.pnl').forEach(p=>{p.hidden=p.id!=='p-'+t;if(!p.hidden){p.classList.remove('in');void p.offsetWidth;p.classList.add('in')}});moveInd();$('.tab.on')?.scrollIntoView({inline:'center',block:'nearest'});scrollTo({top:0,behavior:'smooth'});
+({home:renderHome,arch:renderArch,set:renderSet,scan:scanEnter,in:()=>initForm('in'),out:()=>initForm('out')})[t]();history.replaceState(0,'','#'+t)}
+$('#nav').onclick=e=>{const b=e.target.closest('.tab');b&&go(b.dataset.t)};
+document.addEventListener('pointermove',e=>{const c=e.target.closest?.('.card');if(c){const r=c.getBoundingClientRect();c.style.setProperty('--x',e.clientX-r.left+'px');c.style.setProperty('--y',e.clientY-r.top+'px')}});
+/* ===== forms ===== */
+['in','out'].forEach(t=>{const o=T[t];$('#p-'+t).innerHTML=`<div class="card"><h2>${t=='in'?'📥':'📤'} تسجيل ${o.n} جديد</h2>
+<div class="row"><div><label>رقم القيد (تلقائي)</label><input id="${t}-no" readonly style="direction:ltr;color:var(--gold);font-weight:700"></div><div><label>التاريخ</label><input type="date" id="${t}-d"></div></div>
+<label>${o.party} *</label><input id="${t}-p" placeholder="${o.ph}">
+<label>موضوع المراسلة *</label><input id="${t}-s" placeholder="اكتب الموضوع باختصار">
+<div class="row"><div><label>رقم وتاريخ المراسلة الأصلية (إن وُجد)</label><input id="${t}-r"></div><div><label>الأهمية</label><select id="${t}-pr"><option>عادي</option><option>عاجل</option></select></div></div>
+<label>ملاحظات</label><textarea id="${t}-n"></textarea>
+<label>المرفق (PDF)</label><p class="chip" id="${t}-f">لا يوجد مرفق</p>
+<div class="btns"><button class="btn g2" onclick="S.target='${t}';go('scan')">🖨️ مسح ضوئي</button><button class="btn" onclick="S.target='${t}';$('#impF').click()">📎 إرفاق ملف</button><button class="btn d" onclick="S.draft.${t}=null;fileChip('${t}')">إزالة</button></div>
+<div class="btns"><button class="btn p" style="font-size:1.2rem;padding:12px 34px" onclick="saveRec('${t}')">💾 حفظ ${o.n}</button><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="${t}-pt" style="width:auto"> طباعة إيصال</label></div></div>`});
+function fileChip(t){const f=S.draft[t],c=$('#'+t+'-f');c.textContent=f?'📄 مرفق جاهز — '+sz(f.size):'لا يوجد مرفق';c.classList.toggle('ok',!!f)}
+async function nextNo(t,inc){const y=new Date().getFullYear(),k=`cnt-${t}-${y}`,n=((await DB.get(k))||0)+(inc?1:0);if(inc)await DB.set(k,n);else return`${T[t].pre}/${y}/${String(n+1).padStart(4,'0')}`;return`${T[t].pre}/${y}/${String(n).padStart(4,'0')}`}
+async function initForm(t){$('#'+t+'-no').value=await nextNo(t);if(!$('#'+t+'-d').value)$('#'+t+'-d').value=today();fileChip(t)}
+async function saveRec(t){const g=k=>$(`#${t}-${k}`).value.trim(),p=g('p'),s=g('s');if(!p||!s)return toast('⚠️ اكتب الجهة والموضوع');
+const r={type:t,no:await nextNo(t,1),date:g('d'),party:p,subject:s,ref:g('r'),prio:g('pr'),notes:g('n'),status:ST[0],file:S.draft[t],created:Date.now()};await DB.put(r);
+const pt=$(`#${t}-pt`).checked;['p','s','r','n'].forEach(k=>$(`#${t}-${k}`).value='');$(`#${t}-pr`).value='عادي';S.draft[t]=null;toast(`✅ تم حفظ ${T[t].n} رقم ${r.no}`);if(pt)printRec(r);initForm(t)}
+function printRec(r){$('#printArea').innerHTML=`<img src="logo.jpg" width="110"><h2>مراقبة التربية والتعليم — بلدية سلوق</h2><h3>إيصال تسجيل ${T[r.type].n}</h3><p class="no">${E(r.no)}</p><p>التاريخ: ${E(r.date)}</p><p>${T[r.type].party}: ${E(r.party)}</p><p>الموضوع: ${E(r.subject)}</p>${r.ref?`<p>المرجع: ${E(r.ref)}</p>`:''}<p style="margin-top:40px">ختم وتوقيع المستلم: ........................</p>`;setTimeout(()=>print(),200)}
+/* ===== home ===== */
+async function usage(){const a=await DB.all(),b=a.reduce((s,r)=>s+(r.file?.size||0),0),lim=((await DB.get('lim'))||200)*1048576;return{a,b,lim,pct:Math.min(100,b/lim*100)}}
+async function renderHome(){const{a,b,lim,pct}=await usage(),y=String(new Date().getFullYear()),c=(f)=>a.filter(f).length;
+$('#stats').innerHTML=[['الوارد',c(r=>r.type=='in'),'var(--in)'],['الصادر',c(r=>r.type=='out'),'var(--out)'],['قيد الإجراء',c(r=>r.status==ST[0]),'var(--red)'],['منجز',c(r=>r.status==ST[1]),'var(--grn)'],['إجمالي المراسلات',a.length,'var(--gold)']].map(([l,n,col])=>`<div class="card stat" style="--c:${col}"><b>${n}</b>${l}</div>`).join('');
+$('#bar').style.width=pct+'%';$('#barT').textContent=`${sz(b)} من ${sz(lim)} (${pct.toFixed(0)}%)`;
+$('#warn').innerHTML=pct>=80?`<div class="card warn"><h2 style="color:inherit">⚠️ الأرشيف يقترب من الامتلاء</h2>حمّل نسخة كاملة ثم فرّغ الأرشيف من «الإعدادات».<div class="btns"><button class="btn p" onclick="go('set')">فتح الإعدادات</button></div></div>`:'';
+$('#latest').innerHTML=a.length?a.sort((x,z)=>z.created-x.created).slice(0,6).map(r=>`<p><b class="no ${r.type}">${E(r.no)}</b> ${E(r.subject)} <span class="mut">— ${E(r.party)}</span></p>`).join(''):'<div class="empty">لا توجد مراسلات بعد.<br>ابدأ بتسجيل أول وارد أو صادر 👆</div>'}
+/* ===== archive ===== */
+async function renderArch(){const q=$('#q').value.trim(),ft=$('#ft').value,fs=$('#fs').value;let a=(await DB.all()).sort((x,z)=>z.created-x.created);a=a.filter(r=>(!ft||r.type==ft)&&(!fs||r.status==fs)&&(!q||[r.no,r.subject,r.party,r.ref,r.notes].join(' ').includes(q)));S.view=a;$('#cnt').textContent=a.length+' سجل';
+$('#list').innerHTML=a.length?a.map(r=>`<div class="card rec" data-id="${r.id}"><div class="rh"><b class="no ${r.type}">${E(r.no)}</b><span class="mut">${E(r.date)}</span><span class="bd s${ST.indexOf(r.status)}">${r.status}</span>${r.prio=='عاجل'?'<span class="bd urg">عاجل</span>':''}</div><h3>${E(r.subject)}</h3><p class="mut">${T[r.type].party}: ${E(r.party)}${r.ref?' • المرجع: '+E(r.ref):''}</p>${r.notes?`<p>${E(r.notes)}</p>`:''}
+<div class="ra">${r.file?'<button class="btn g2" data-a="v">📄 عرض PDF</button><button class="btn" data-a="d">⬇ تنزيل</button>':'<button class="btn" data-a="f">📎 إرفاق ملف</button>'}<button class="btn" data-a="s">🔄 تغيير الحالة</button><button class="btn" data-a="p">🖨️ إيصال</button><button class="btn d" data-a="x">🗑️ حذف</button></div></div>`).join(''):'<div class="empty">لا توجد نتائج.</div>'}
+['q','ft','fs'].forEach(i=>$('#'+i).oninput=renderArch);
+$('#list').onclick=async e=>{const b=e.target.closest('[data-a]');if(!b)return;const id=+b.closest('.rec').dataset.id,r=(await DB.all()).find(x=>x.id===id),a=b.dataset.a;
+if(a=='v')window.open(URL.createObjectURL(r.file));if(a=='d')dl(r.file,r.no.replace(/\//g,'-')+'.pdf');if(a=='p')printRec(r);
+if(a=='s'){r.status=ST[(ST.indexOf(r.status)+1)%3];await DB.put(r);renderArch()}
+if(a=='f'){S.rowId=id;$('#rowF').click()}
+if(a=='x'&&await verify('الحذف يحتاج كلمة السر:')){await DB.del(id);toast('🗑️ تم الحذف');renderArch()}};
+$('#rowF').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const r=(await DB.all()).find(x=>x.id===S.rowId);r.file=await toPdf(f);await DB.put(r);toast('✅ تم الإرفاق');renderArch()};
+$('#csv').onclick=()=>{const rows=[['الرقم','النوع','التاريخ','الجهة','الموضوع','المرجع','الأهمية','الحالة','ملاحظات'],...(S.view||[]).map(r=>[r.no,T[r.type].n,r.date,r.party,r.subject,r.ref,r.prio,r.status,r.notes])];dl(new Blob(['\ufeff'+rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n')],{type:'text/csv'}),'ارشيف-'+today()+'.csv')};
+/* ===== scanner ===== */
+async function listDev(){const ch=$('#devChip'),sel=$('#devSel');let d=[];try{d=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind=='videoinput')}catch{}
+sel.innerHTML=d.map((x,i)=>`<option value="${x.deviceId}">${E(x.label||'جهاز التقاط '+(i+1))}</option>`).join('')||'<option>لا يوجد</option>';ch.className='chip'+(d.length?' ok':'');ch.textContent=d.length?`🟢 تم التعرف على ${d.length} جهاز: ${d.map(x=>x.label||'كاميرا').join('، ')}`:'⚪ لا يوجد جهاز مباشر — استخدم مجلد الماسح أو الاستيراد';return d.length}
+function scanEnter(){listDev();$('#tscan').classList.remove('dot');renderPages()}
+if(navigator.mediaDevices)navigator.mediaDevices.ondevicechange=async()=>{const n=await listDev();toast(n?'🟢 تم اكتشاف جهاز مسح/كاميرا':'🔌 تم فصل الجهاز');$('#tscan').classList.add('dot')};
+$('#camGo').onclick=async()=>{try{S.stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:$('#devSel').value?{exact:$('#devSel').value}:undefined,width:{ideal:3000},height:{ideal:3000}}});const v=$('#vid');v.srcObject=S.stream;v.hidden=false;$('#camGo').hidden=true;$('#camSnap').hidden=$('#camStop').hidden=false;listDev()}catch{toast('❌ تعذّر تشغيل الجهاز — اسمح للمتصفح بالوصول')}};
+$('#camStop').onclick=()=>{S.stream?.getTracks().forEach(t=>t.stop());$('#vid').hidden=true;$('#camGo').hidden=false;$('#camSnap').hidden=$('#camStop').hidden=true};
+$('#camSnap').onclick=()=>{const v=$('#vid'),c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);c.toBlob(b=>ingest([b]),'image/jpeg',.95)};
+$('#impF').onchange=e=>{const f=[...e.target.files];e.target.value='';if(f.length){go('scan');ingest(f)}};
+async function ingest(files){for(const f of files){if(f.name&&isPdf(f)){setRes(f);continue}try{S.pages.push(await mkPage(f))}catch{toast('⚠️ ملف غير مدعوم')}}renderPages();toast(`➕ أُضيفت ${files.length} صفحة`);if($('#auto').value==='1'&&S.pages.length){clearTimeout(S.deb);S.deb=setTimeout(makePdf,1400)}}
+function renderPages(){$('#pgN').textContent=S.pages.length?`(${S.pages.length})`:'';const el=$('#pages');el.innerHTML=S.pages.length?'':'<div class="empty" style="grid-column:1/-1">لا توجد صفحات. شغّل الكاميرا أو اختر مجلد الماسح أو استورد صورًا.</div>';
+S.pages.forEach((p,i)=>{const d=document.createElement('div');d.className='pg';d.append(renderPage(p,p.th));const b=document.createElement('div');[['↻',()=>p.rot=(p.rot+1)%4],['🎨',()=>p.mode={enh:'bw',bw:'orig',orig:'enh'}[p.mode]],['▶',()=>i>0&&S.pages.splice(i-1,0,...S.pages.splice(i,1))],['◀',()=>i<S.pages.length-1&&S.pages.splice(i+1,0,...S.pages.splice(i,1))],['✖',()=>S.pages.splice(i,1)]].forEach(([t,fn])=>{const x=document.createElement('button');x.textContent=t;x.onclick=()=>{fn();renderPages()};b.append(x)});d.append(b);el.append(d)})}
+async function makePdf(){if(!S.pages.length)return toast('⚠️ لا توجد صفحات');toast('⏳ جارٍ التحويل…');const n=S.pages.length;setRes(await pagesToPdf(S.pages),n)}
+$('#mkPdf').onclick=makePdf;$('#clrPg').onclick=()=>{S.pages=[];renderPages()};
+async function setRes(b,n){S.pdf=b;S.pdfName='مسح-'+stamp()+'.pdf';$('#res').hidden=false;$('#resT').textContent=`${n?n+' صفحة — ':''}${sz(b.size)}`;const a=(await DB.all()).filter(r=>!r.file).sort((x,z)=>z.created-x.created).slice(0,30);
+$('#attachTo').innerHTML='<option value="">— اختر —</option><option value="in">نموذج «وارد جديد»</option><option value="out">نموذج «صادر جديد»</option>'+a.map(r=>`<option value="${r.id}">${E(r.no)} — ${E(r.subject)}</option>`).join('');if(S.target){$('#attachTo').value=S.target;$('#attachTo').onchange()}toast('✅ تم التحويل إلى PDF')}
+$('#resDl').onclick=()=>dl(S.pdf,S.pdfName);$('#resView').onclick=()=>window.open(URL.createObjectURL(S.pdf));
+$('#attachTo').onchange=async e=>{const v=$('#attachTo').value;if(!v)return;if(v=='in'||v=='out'){S.draft[v]=S.pdf;S.target=null;go(v);toast('📎 تم إرفاق الملف بالنموذج')}else{const r=(await DB.all()).find(x=>x.id==v);r.file=S.pdf;await DB.put(r);toast('📎 أُرفق بالسجل '+r.no);S.pages=[];renderPages();$('#res').hidden=true}};
+$('#watchBtn').onclick=async()=>{if(!window.showDirectoryPicker)return toast('⚠️ هذه الميزة تعمل في Chrome أو Edge');try{S.dir=await showDirectoryPicker();S.seen=new Set();for await(const[n,h]of S.dir.entries())if(h.kind=='file')S.seen.add(n+(await h.getFile()).lastModified);clearInterval(S.timer);S.timer=setInterval(poll,1500);$('#watchSt').textContent='🟢 تتم المراقبة: '+S.dir.name+' — امسح ورقة وستظهر هنا';toast('🟢 بدأت مراقبة المجلد')}catch{}};
+async function poll(){if(S.busy)return;S.busy=1;try{const nw=[];for await(const[n,h]of S.dir.entries()){if(h.kind!='file'||!/\.(jpe?g|png|bmp|webp|pdf)$/i.test(n))continue;const f=await h.getFile(),k=n+f.lastModified;if(S.seen.has(k)||Date.now()-f.lastModified<900)continue;S.seen.add(k);nw.push(f)}if(nw.length){$('#tscan').classList.add('dot');await ingest(nw)}}catch{clearInterval(S.timer);$('#watchSt').textContent='⚪ توقفت المراقبة'}S.busy=0}
+/* ===== settings ===== */
+async function renderSet(){$('#lim').value=(await DB.get('lim'))||200}
+$('#lim').onchange=async e=>{await DB.set('lim',Math.max(20,+e.target.value||200));toast('✅ تم الحفظ')};
+const b64=b=>new Promise(r=>{const f=new FileReader;f.onload=()=>r(f.result);f.readAsDataURL(b)});
+async function backup(){toast('⏳ جارٍ تجهيز النسخة…');const a=await DB.all(),m=await DB.metaAll();delete m.pw;const recs=[];for(const r of a){const o={...r};delete o.id;o.file=r.file?await b64(r.file):null;recs.push(o)}dl(new Blob([JSON.stringify({v:1,date:Date.now(),meta:m,records:recs})],{type:'application/json'}),'ارشيف-سلوق-'+today()+'.json')}
+$('#bk').onclick=backup;
+$('#rs').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const j=JSON.parse(await f.text());for(const r of j.records){r.file=r.file?await(await fetch(r.file)).blob():null;await DB.put(r)}for(const[k,v]of Object.entries(j.meta||{}))if(k.startsWith('cnt-'))await DB.set(k,Math.max(v,(await DB.get(k))||0));toast(`✅ تم استرجاع ${j.records.length} سجل`)}catch{toast('❌ ملف النسخة غير صالح')}};
+$('#purge').onclick=async()=>{if(!await verify('تفريغ الأرشيف يحتاج كلمة السر:'))return;await backup();if(!confirm('تم تحميل النسخة. تأكد أنها حُفظت في جهازك ثم اضغط موافق لتفريغ الأرشيف نهائيًا.'))return;await DB.clear();toast('✅ تم تفريغ الأرشيف — ابدأ من جديد');go('home')};
+$('#chpw').onclick=async()=>{if(await DB.get('pw')&&!await verify('أدخل كلمة السر الحالية:'))return;await newPass()};
+/* ===== theme / pwa ===== */
+$('#th').onclick=()=>{const d=document.documentElement,l=d.dataset.th=='dark';d.dataset.th=l?'light':'dark';$('#th').textContent=l?'☀️':'🌙';localStorage.th=d.dataset.th};
+let dp;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('#inst').hidden=false});$('#inst').onclick=()=>dp?.prompt();
+addEventListener('resize',moveInd);
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+(async()=>{if(localStorage.th){document.documentElement.dataset.th=localStorage.th;$('#th').textContent=localStorage.th=='light'?'☀️':'🌙'}
+await DB.open();navigator.storage?.persist?.();await document.fonts.ready;const t=location.hash.slice(1);go(['home','in','out','scan','arch','set'].includes(t)?t:'home')})();
+</script>
+</body>
+</html>
