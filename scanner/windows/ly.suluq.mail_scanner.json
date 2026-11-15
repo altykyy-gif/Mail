@@ -1,0 +1,7 @@
+{
+  "name": "ly.suluq.mail_scanner",
+  "description": "Suluq Mail Windows Scanner",
+  "path": "MailScannerHost.exe",
+  "type": "stdio",
+  "allowed_origins": ["chrome-extension://mdojliahacnjhobkccddigaglkmccidj/"]
+}
