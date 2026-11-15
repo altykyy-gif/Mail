@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "ماسح منظومة الصادر والوارد",
+  "description": "اكتشاف الماسحات المعرّفة في ويندوز والمسح من منظومة الصادر والوارد في سلوق.",
+  "version": "1.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtUApZTulJj4uf73+ghqVdx0zAPwQOk6PYCenuvRFea1DNVWlOqyEY4+XNHZ0DcK+abgkMj7xD1ijk9GlZd0mDqAjlSYb+wssfLx/zWQv4x6smrbgYscN050LA2rJeqKQtDEtEmMw9eTAZJXjE2AFr9WhTn0eU2xHSEfqRH3BZVsVmJ4Ssb/0OWnNLt/9ZUkLwdbFV3LoGX3chRzqokcCcb0qBpHtzrrLOIBLSePP0ETXwSLusRyMqSdYtC7Qdz6TASiDyuQ78b5q3ISUPhoDI1pK28+XSZPquoBa084W8DT5fnMKYFuDf4e1EXKGZ+sG3VcQY6sU5jrJgs/w5BP2MwIDAQAB",
+  "permissions": ["nativeMessaging"],
+  "background": {"service_worker": "background.js"},
+  "externally_connectable": {"matches": ["https://altykyy-gif.github.io/Mail/*"]}
+}
