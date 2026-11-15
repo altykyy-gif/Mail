@@ -13,6 +13,7 @@
 :root{color-scheme:dark;--bg:#070b12;--card:rgba(255,255,255,.055);--bd:rgba(255,255,255,.11);--tx:#eef2f7;--mut:#94a1b5;--gold:#d9b25f;--grn:#22c55e;--red:#ef4444;--blu:#38bdf8;--in:#38bdf8;--out:#f59e0b}
 [data-th=light]{color-scheme:light;--bg:#eef2f8;--card:rgba(255,255,255,.85);--bd:rgba(0,0,0,.12);--tx:#111a2b;--mut:#5a6578;--gold:#a67c1f}
 *{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
 html{scroll-behavior:smooth}
 body{font:400 19px/1.7 Amiri,serif;color:var(--tx);background:var(--bg);min-height:100vh;padding-bottom:90px;
 background-image:radial-gradient(ellipse 60% 40% at 85% -5%,rgba(34,197,94,.16),transparent),radial-gradient(ellipse 50% 40% at 5% 10%,rgba(239,68,68,.12),transparent),radial-gradient(ellipse 60% 50% at 50% 110%,rgba(217,178,95,.14),transparent);background-attachment:fixed}
@@ -53,6 +54,11 @@ textarea{min-height:80px;resize:vertical}
 .btn.g2{background:linear-gradient(135deg,#15803d,#22c55e);color:#031a0b;border:0;box-shadow:0 0 22px rgba(34,197,94,.4)}
 .btn.d{border-color:rgba(239,68,68,.6);color:#fca5a5}
 .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.btn:disabled{cursor:default;opacity:.55;transform:none;box-shadow:none}
+#winSetup{margin-top:12px}
+#winSetup summary{cursor:pointer;color:var(--gold);font-weight:700}
+#winSetup code{overflow-wrap:anywhere;unicode-bidi:isolate}
+#winDevice option{background:#fff}
 .bd{display:inline-block;padding:0 12px;border-radius:99px;font-size:.9rem;background:rgba(148,163,184,.2)}
 .bd.s0{background:rgba(245,158,11,.22);color:#fbbf24}.bd.s1{background:rgba(34,197,94,.22);color:#4ade80}.bd.urg{background:rgba(239,68,68,.25);color:#fca5a5}
 .rec .rh{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
@@ -107,19 +113,32 @@ footer{text-align:center;color:var(--mut);padding:16px;font-size:1rem}footer b{c
 <section class="pnl" id="p-out" hidden></section>
 <section class="pnl" id="p-scan" hidden>
 <div class="card"><h2>الماسح الضوئي</h2>
-<p class="chip" id="devChip">⚪ جارٍ البحث عن أجهزة…</p>
-<p class="mut" style="margin-top:8px">اختر طريقة المسح: كاميرا / ماسح يظهر ككاميرا، أو مراقبة مجلد الماسح (تحويل تلقائي)، أو استيراد صور جاهزة.</p>
+<div class="card" style="margin:0">
+<h3>المسح المباشر من ويندوز</h3>
+<p class="chip" id="winStatus" role="status">جارٍ البحث عن الماسحات…</p>
+<div id="winSelection" hidden><label for="winDevice">الماسح المتصل</label><select id="winDevice" disabled></select></div>
+<div class="btns" id="winActions"><button class="btn g2" id="winScanPage" disabled>🖨️ مسح صفحة</button><button class="btn" id="winRefresh">إعادة البحث</button></div>
+<details id="winSetup" hidden>
+<summary>تجهيز الماسح لأول مرة</summary>
+<ol>
+<li><button class="btn" id="winDownloadSetup">تنزيل أداة الماسح لويندوز</button> ثم شغّلها.</li>
+<li>افتح صفحة الإضافات في كروم أو إيدج من قائمة المتصفح، وفعّل «وضع المطوّر».</li>
+<li>اضغط «تحميل إضافة غير مضغوطة» واختر مجلد <code dir="ltr">%LOCALAPPDATA%\SuluqMailScanner\extension</code>.</li>
+<li>حدّث هذه الصفحة لعرض الماسحات التي يتعرّف عليها ويندوز.</li>
+</ol>
+</details>
+</div>
 <div class="g" style="margin-top:12px">
-<div class="card" style="margin:0"><h3>📷 كاميرا أو ماسح USB</h3><select id="devSel"></select><div class="btns"><button class="btn g2" id="camGo">تشغيل</button><button class="btn p" id="camSnap" hidden>التقاط صفحة</button><button class="btn d" id="camStop" hidden>إيقاف</button></div><video id="vid" playsinline autoplay muted hidden></video></div>
+<div class="card" style="margin:0"><h3>📷 الكاميرا</h3><select id="devSel" aria-label="الكاميرا"></select><div class="btns"><button class="btn g2" id="camGo">تشغيل</button><button class="btn p" id="camSnap" hidden>التقاط صفحة</button><button class="btn d" id="camStop" hidden>إيقاف</button></div><video id="vid" playsinline autoplay muted hidden></video></div>
 <div class="card" style="margin:0"><h3>📁 مراقبة مجلد الماسح</h3><p class="mut">اجعل الماسح يحفظ في مجلد، واخترْه هنا؛ كل ورقة جديدة تُضاف فورًا.</p><div class="btns"><button class="btn g2" id="watchBtn">اختيار المجلد</button></div><p class="mut" id="watchSt"></p></div>
-<div class="card" style="margin:0"><h3>🖼️ استيراد ملفات</h3><p class="mut">صور أو ملفات PDF من الجهاز.</p><div class="btns"><button class="btn p" onclick="$('#impF').click()">اختيار ملفات</button></div><input type="file" id="impF" accept="image/*,application/pdf" multiple hidden></div>
+<div class="card" style="margin:0"><h3>🖼️ استيراد ملفات</h3><p class="mut">صور أو ملفات PDF من الجهاز.</p><div class="btns"><button class="btn p" onclick="pickScanFile()">اختيار ملفات</button></div><input type="file" id="impF" accept="image/*,application/pdf" multiple hidden></div>
 </div></div>
 <div class="card"><h2>الصفحات الممسوحة <span class="mut" id="pgN"></span></h2>
 <div class="row" style="margin-bottom:12px"><div><label>تحسين الصورة</label><select id="mode"><option value="enh">مستند واضح (موصى به)</option><option value="bw">أبيض وأسود</option><option value="orig">الأصل بالألوان</option></select></div><div><label>تحويل فوري إلى PDF</label><select id="auto"><option value="1">مفعّل — يتحول بعد كل مسح</option><option value="0">يدوي</option></select></div></div>
 <div class="pages" id="pages"></div>
 <div class="btns"><button class="btn p" id="mkPdf">📄 تحويل إلى PDF</button><button class="btn d" id="clrPg">مسح القائمة</button></div></div>
 <div class="card" id="res" hidden><h2>ملف PDF جاهز ✅</h2><p id="resT"></p>
-<div class="btns"><button class="btn g2" id="resDl">⬇ تنزيل</button><button class="btn" id="resView">👁 معاينة</button></div>
+<div class="btns"><button class="btn g2" id="attachDraft" hidden>إرفاق بالنموذج</button><button class="btn g2" id="resDl">⬇ تنزيل</button><button class="btn" id="resView">👁 معاينة</button></div>
 <label>إرفاق بـ</label><select id="attachTo"></select></div>
 </section>
 <section class="pnl" id="p-arch" hidden>
@@ -139,12 +158,13 @@ footer{text-align:center;color:var(--mut);padding:16px;font-size:1rem}footer b{c
 <div id="toasts"></div>
 <dialog id="dlg"><h2 id="dt"></h2><p id="dm" class="mut"></p><input id="di" autocomplete="off"><div class="btns"><button class="btn p" id="dok">موافق</button><button class="btn" id="dno">إلغاء</button></div></dialog>
 <div id="printArea"></div>
+<script src="scanner/web.js"></script>
 <script>
 const $=(s,e=document)=>e.querySelector(s),$$=(s,e=document)=>[...e.querySelectorAll(s)];
 const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const T={in:{n:'وارد',pre:'و',party:'الجهة المرسِلة',ph:'من أي جهة وصل الكتاب؟'},out:{n:'صادر',pre:'ص',party:'الجهة المرسَل إليها',ph:'إلى أي جهة سيُرسل الكتاب؟'}};
 const ST=['قيد الإجراء','منجز','مؤرشف'];
-const S={pages:[],pdf:null,draft:{in:null,out:null},target:null,stream:null,dir:null,timer:null};
+const S={pages:[],pdf:null,scanVersion:0,reviewScan:false,draft:{in:null,out:null},target:null,stream:null,dir:null,timer:null};
 const DB={db:null,
 open(){return new Promise((ok,no)=>{const r=indexedDB.open('sulug-mail',1);r.onupgradeneeded=()=>{r.result.createObjectStore('records',{keyPath:'id',autoIncrement:true});r.result.createObjectStore('meta')};r.onsuccess=()=>{this.db=r.result;ok()};r.onerror=()=>no(r.error)})},
 tx(st,m,fn){return new Promise((ok,no)=>{const t=this.db.transaction(st,m),rq=fn(t.objectStore(st));t.oncomplete=()=>ok(rq&&rq.result);t.onerror=()=>no(t.error)})},
@@ -168,13 +188,13 @@ obj(p+2,()=>{push(`<</Type/XObject/Subtype/Image/Width ${j.w}/Height ${j.h}/Colo
 const tot=3+js.length*3,xr=len;push(`xref\n0 ${tot}\n0000000000 65535 f \n`);for(let i=1;i<tot;i++)push(String(offs[i]).padStart(10,'0')+' 00000 n \n');push(`trailer\n<</Size ${tot}/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`);return new Blob(parts,{type:'application/pdf'})}
 function renderPage(p,src=p.src){const r=p.rot%2,w=r?src.height:src.width,h=r?src.width:src.height,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.translate(w/2,h/2);x.rotate(p.rot*Math.PI/2);x.drawImage(src,-src.width/2,-src.height/2);x.setTransform(1,0,0,1,0,0);
 if(p.mode!=='orig'){const d=x.getImageData(0,0,w,h),a=d.data;for(let i=0;i<a.length;i+=4){let g=.299*a[i]+.587*a[i+1]+.114*a[i+2];g=p.mode==='bw'?(g>150?255:0):Math.max(0,Math.min(255,(g-105)*1.7+130));a[i]=a[i+1]=a[i+2]=g}x.putImageData(d,0,0)}return c}
-async function mkPage(f){const bm=await createImageBitmap(f),k=Math.min(1,2200/Math.max(bm.width,bm.height)),c=document.createElement('canvas');c.width=bm.width*k;c.height=bm.height*k;c.getContext('2d').drawImage(bm,0,0,c.width,c.height);const t=document.createElement('canvas'),tk=260/Math.max(c.width,c.height);t.width=c.width*tk;t.height=c.height*tk;t.getContext('2d').drawImage(c,0,0,t.width,t.height);return{src:c,th:t,rot:0,mode:$('#mode').value}}
+async function mkPage(f){const bm=await createImageBitmap(f),k=Math.min(1,2200/Math.max(bm.width,bm.height)),c=document.createElement('canvas');c.width=bm.width*k;c.height=bm.height*k;c.getContext('2d').drawImage(bm,0,0,c.width,c.height);bm.close();const t=document.createElement('canvas'),tk=260/Math.max(c.width,c.height);t.width=c.width*tk;t.height=c.height*tk;t.getContext('2d').drawImage(c,0,0,t.width,t.height);return{src:c,th:t,rot:0,mode:$('#mode').value}}
 async function pagesToPdf(pg){const js=[];for(const p of pg){const c=renderPage(p),b=await new Promise(r=>c.toBlob(r,'image/jpeg',.86));js.push({bytes:new Uint8Array(await b.arrayBuffer()),w:c.width,h:c.height})}return buildPDF(js)}
 const isPdf=f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name);
 async function toPdf(f){return isPdf(f)?f:pagesToPdf([await mkPage(f)])}
 /* ===== nav ===== */
 function moveInd(){const t=$('.tab.on'),i=$('#ind');if(t){i.style.width=t.offsetWidth+'px';i.style.right='auto';i.style.left=t.offsetLeft+'px'}}
-function go(t){$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$$('.pnl').forEach(p=>{p.hidden=p.id!=='p-'+t;if(!p.hidden){p.classList.remove('in');void p.offsetWidth;p.classList.add('in')}});moveInd();$('.tab.on')?.scrollIntoView({inline:'center',block:'nearest'});scrollTo({top:0,behavior:'smooth'});
+function go(t){if(t!=='scan'&&!$('#p-scan').hidden){S.target=null;$('#attachDraft').hidden=true}$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$$('.pnl').forEach(p=>{p.hidden=p.id!=='p-'+t;if(!p.hidden){p.classList.remove('in');void p.offsetWidth;p.classList.add('in')}});moveInd();$('.tab.on')?.scrollIntoView({inline:'center',block:'nearest'});scrollTo({top:0,behavior:'smooth'});
 ({home:renderHome,arch:renderArch,set:renderSet,scan:scanEnter,in:()=>initForm('in'),out:()=>initForm('out')})[t]();history.replaceState(0,'','#'+t)}
 $('#nav').onclick=e=>{const b=e.target.closest('.tab');b&&go(b.dataset.t)};
 document.addEventListener('pointermove',e=>{const c=e.target.closest?.('.card');if(c){const r=c.getBoundingClientRect();c.style.setProperty('--x',e.clientX-r.left+'px');c.style.setProperty('--y',e.clientY-r.top+'px')}});
@@ -186,7 +206,7 @@ document.addEventListener('pointermove',e=>{const c=e.target.closest?.('.card');
 <div class="row"><div><label>رقم وتاريخ المراسلة الأصلية (إن وُجد)</label><input id="${t}-r"></div><div><label>الأهمية</label><select id="${t}-pr"><option>عادي</option><option>عاجل</option></select></div></div>
 <label>ملاحظات</label><textarea id="${t}-n"></textarea>
 <label>المرفق (PDF)</label><p class="chip" id="${t}-f">لا يوجد مرفق</p>
-<div class="btns"><button class="btn g2" onclick="S.target='${t}';go('scan')">🖨️ مسح ضوئي</button><button class="btn" onclick="S.target='${t}';$('#impF').click()">📎 إرفاق ملف</button><button class="btn d" onclick="S.draft.${t}=null;fileChip('${t}')">إزالة</button></div>
+<div class="btns"><button class="btn g2" onclick="scanFor('${t}')">🖨️ مسح ضوئي</button><button class="btn" onclick="pickScanFile('${t}')">📎 إرفاق ملف</button><button class="btn d" onclick="S.draft.${t}=null;fileChip('${t}')">إزالة</button></div>
 <div class="btns"><button class="btn p" style="font-size:1.2rem;padding:12px 34px" onclick="saveRec('${t}')">💾 حفظ ${o.n}</button><label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="${t}-pt" style="width:auto"> طباعة إيصال</label></div></div>`});
 function fileChip(t){const f=S.draft[t],c=$('#'+t+'-f');c.textContent=f?'📄 مرفق جاهز — '+sz(f.size):'لا يوجد مرفق';c.classList.toggle('ok',!!f)}
 async function nextNo(t,inc){const y=new Date().getFullYear(),k=`cnt-${t}-${y}`,n=((await DB.get(k))||0)+(inc?1:0);if(inc)await DB.set(k,n);else return`${T[t].pre}/${y}/${String(n+1).padStart(4,'0')}`;return`${T[t].pre}/${y}/${String(n).padStart(4,'0')}`}
@@ -215,23 +235,69 @@ if(a=='x'&&await verify('الحذف يحتاج كلمة السر:')){await DB.de
 $('#rowF').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const r=(await DB.all()).find(x=>x.id===S.rowId);r.file=await toPdf(f);await DB.put(r);toast('✅ تم الإرفاق');renderArch()};
 $('#csv').onclick=()=>{const rows=[['الرقم','النوع','التاريخ','الجهة','الموضوع','المرجع','الأهمية','الحالة','ملاحظات'],...(S.view||[]).map(r=>[r.no,T[r.type].n,r.date,r.party,r.subject,r.ref,r.prio,r.status,r.notes])];dl(new Blob(['\ufeff'+rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n')],{type:'text/csv'}),'ارشيف-'+today()+'.csv')};
 /* ===== scanner ===== */
-async function listDev(){const ch=$('#devChip'),sel=$('#devSel');let d=[];try{d=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind=='videoinput')}catch{}
-sel.innerHTML=d.map((x,i)=>`<option value="${x.deviceId}">${E(x.label||'جهاز التقاط '+(i+1))}</option>`).join('')||'<option>لا يوجد</option>';ch.className='chip'+(d.length?' ok':'');ch.textContent=d.length?`🟢 تم التعرف على ${d.length} جهاز: ${d.map(x=>x.label||'كاميرا').join('، ')}`:'⚪ لا يوجد جهاز مباشر — استخدم مجلد الماسح أو الاستيراد';return d.length}
-function scanEnter(){listDev();$('#tscan').classList.remove('dot');renderPages()}
-if(navigator.mediaDevices)navigator.mediaDevices.ondevicechange=async()=>{const n=await listDev();toast(n?'🟢 تم اكتشاف جهاز مسح/كاميرا':'🔌 تم فصل الجهاز');$('#tscan').classList.add('dot')};
+async function listDev(){const sel=$('#devSel'),previous=sel.value;let d=[];try{d=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==='videoinput')}catch{}
+sel.replaceChildren(...(d.length?d.map((x,i)=>new Option(x.label||`كاميرا ${i+1}`,x.deviceId)):[new Option('لا توجد كاميرا','')]));if(d.some(x=>x.deviceId===previous))sel.value=previous}
+function scanEnter(){listDev();WindowsScanner.refresh();$('#tscan').classList.remove('dot');renderPages()}
+function scanFor(target){if(S.target!==target)clearScan();S.target=target;go('scan')}
+function pickScanFile(target=null){S.importTarget=target;$('#impF').click()}
+navigator.mediaDevices?.addEventListener('devicechange',listDev);
 $('#camGo').onclick=async()=>{try{S.stream=await navigator.mediaDevices.getUserMedia({video:{deviceId:$('#devSel').value?{exact:$('#devSel').value}:undefined,width:{ideal:3000},height:{ideal:3000}}});const v=$('#vid');v.srcObject=S.stream;v.hidden=false;$('#camGo').hidden=true;$('#camSnap').hidden=$('#camStop').hidden=false;listDev()}catch{toast('❌ تعذّر تشغيل الجهاز — اسمح للمتصفح بالوصول')}};
 $('#camStop').onclick=()=>{S.stream?.getTracks().forEach(t=>t.stop());$('#vid').hidden=true;$('#camGo').hidden=false;$('#camSnap').hidden=$('#camStop').hidden=true};
-$('#camSnap').onclick=()=>{const v=$('#vid'),c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);c.toBlob(b=>ingest([b]),'image/jpeg',.95)};
-$('#impF').onchange=e=>{const f=[...e.target.files];e.target.value='';if(f.length){go('scan');ingest(f)}};
-async function ingest(files){for(const f of files){if(f.name&&isPdf(f)){setRes(f);continue}try{S.pages.push(await mkPage(f))}catch{toast('⚠️ ملف غير مدعوم')}}renderPages();toast(`➕ أُضيفت ${files.length} صفحة`);if($('#auto').value==='1'&&S.pages.length){clearTimeout(S.deb);S.deb=setTimeout(makePdf,1400)}}
-function renderPages(){$('#pgN').textContent=S.pages.length?`(${S.pages.length})`:'';const el=$('#pages');el.innerHTML=S.pages.length?'':'<div class="empty" style="grid-column:1/-1">لا توجد صفحات. شغّل الكاميرا أو اختر مجلد الماسح أو استورد صورًا.</div>';
-S.pages.forEach((p,i)=>{const d=document.createElement('div');d.className='pg';d.append(renderPage(p,p.th));const b=document.createElement('div');[['↻',()=>p.rot=(p.rot+1)%4],['🎨',()=>p.mode={enh:'bw',bw:'orig',orig:'enh'}[p.mode]],['▶',()=>i>0&&S.pages.splice(i-1,0,...S.pages.splice(i,1))],['◀',()=>i<S.pages.length-1&&S.pages.splice(i+1,0,...S.pages.splice(i,1))],['✖',()=>S.pages.splice(i,1)]].forEach(([t,fn])=>{const x=document.createElement('button');x.textContent=t;x.onclick=()=>{fn();renderPages()};b.append(x)});d.append(b);el.append(d)})}
-async function makePdf(){if(!S.pages.length)return toast('⚠️ لا توجد صفحات');toast('⏳ جارٍ التحويل…');const n=S.pages.length;setRes(await pagesToPdf(S.pages),n)}
-$('#mkPdf').onclick=makePdf;$('#clrPg').onclick=()=>{S.pages=[];renderPages()};
-async function setRes(b,n){S.pdf=b;S.pdfName='مسح-'+stamp()+'.pdf';$('#res').hidden=false;$('#resT').textContent=`${n?n+' صفحة — ':''}${sz(b.size)}`;const a=(await DB.all()).filter(r=>!r.file).sort((x,z)=>z.created-x.created).slice(0,30);
-$('#attachTo').innerHTML='<option value="">— اختر —</option><option value="in">نموذج «وارد جديد»</option><option value="out">نموذج «صادر جديد»</option>'+a.map(r=>`<option value="${r.id}">${E(r.no)} — ${E(r.subject)}</option>`).join('');if(S.target){$('#attachTo').value=S.target;$('#attachTo').onchange()}toast('✅ تم التحويل إلى PDF')}
+$('#camSnap').onclick=()=>{const v=$('#vid'),c=document.createElement('canvas'),batch=S.pages;c.width=v.videoWidth;c.height=v.videoHeight;if(!c.width||!c.height)return;c.getContext('2d').drawImage(v,0,0);c.toBlob(b=>b&&ingest([b],batch),'image/jpeg',.95)};
+$('#impF').onchange=e=>{const files=[...e.target.files],target=S.importTarget;e.target.value='';S.importTarget=null;if(!files.length)return;if(target)scanFor(target);else go('scan');ingest(files)};
+async function ingest(files,batch=S.pages){
+  let added=0, pdf;
+  for(const file of files){
+    if(file.name&&isPdf(file)){pdf=file;continue}
+    try{const page=await mkPage(file);if(batch!==S.pages)return;batch.push(page);added++}
+    catch{toast('⚠️ تعذّر فتح صورة المستند')}
+  }
+  if(batch!==S.pages)return;
+  if(added||pdf)invalidateScan();
+  if(added){renderPages();toast(`➕ عدد الصفحات المضافة: ${added}`)}
+  if(pdf)await setRes(pdf);
+  if(added&&batch===S.pages&&$('#auto').value==='1')S.deb=setTimeout(makePdf,1400);
+}
+function invalidateScan(){clearTimeout(S.deb);S.scanVersion++;S.pdf=null;$('#res').hidden=true}
+function clearScan(){S.pages=[];S.reviewScan=false;invalidateScan();renderPages()}
+function renderPages(){$('#pgN').textContent=S.pages.length?`(${S.pages.length})`:'';const el=$('#pages');el.innerHTML=S.pages.length?'':'<div class="empty" style="grid-column:1/-1">لا توجد صفحات ممسوحة. امسح صفحة أو استورد ملفًا.</div>';
+S.pages.forEach((p,i)=>{const d=document.createElement('div');d.className='pg';d.append(renderPage(p,p.th));const b=document.createElement('div');[['↻',()=>p.rot=(p.rot+1)%4],['🎨',()=>p.mode={enh:'bw',bw:'orig',orig:'enh'}[p.mode]],['▶',()=>i>0&&S.pages.splice(i-1,0,...S.pages.splice(i,1))],['◀',()=>i<S.pages.length-1&&S.pages.splice(i+1,0,...S.pages.splice(i,1))],['✖',()=>S.pages.splice(i,1)]].forEach(([t,fn])=>{const x=document.createElement('button');x.textContent=t;x.onclick=()=>{fn();invalidateScan();renderPages();if(S.pages.length&&$('#auto').value==='1')S.deb=setTimeout(makePdf,1400)};b.append(x)});d.append(b);el.append(d)})}
+async function makePdf(){
+  if(!S.pages.length)return toast('⚠️ لا توجد صفحات');
+  clearTimeout(S.deb);
+  const version=S.scanVersion,pages=S.pages.slice();
+  toast('⏳ جارٍ التحويل…');
+  try{await setRes(await pagesToPdf(pages),pages.length,version)}catch{toast('⚠️ تعذّر تحويل الصفحات إلى PDF')}
+}
+$('#mkPdf').onclick=makePdf;$('#clrPg').onclick=clearScan;
+async function setRes(b,n,version=S.scanVersion){
+  const a=(await DB.all()).filter(r=>!r.file).sort((x,z)=>z.created-x.created).slice(0,30);
+  if(version!==S.scanVersion)return;
+  S.pdf=b;S.pdfName='مسح-'+stamp()+'.pdf';$('#res').hidden=false;$('#resT').textContent=`${n?n+' صفحة — ':''}${sz(b.size)}`;
+  $('#attachTo').innerHTML='<option value="">— اختر —</option><option value="in">نموذج «وارد جديد»</option><option value="out">نموذج «صادر جديد»</option>'+a.map(r=>`<option value="${r.id}">${E(r.no)} — ${E(r.subject)}</option>`).join('');
+  const attach=$('#attachDraft');
+  attach.hidden=!(S.target&&S.reviewScan);
+  if(S.target){
+    if(!S.reviewScan){await attachPdf(S.target);return}
+    attach.textContent=`إرفاق بنموذج ${T[S.target].n}`;
+  }
+  toast('✅ ملف PDF جاهز');
+}
 $('#resDl').onclick=()=>dl(S.pdf,S.pdfName);$('#resView').onclick=()=>window.open(URL.createObjectURL(S.pdf));
-$('#attachTo').onchange=async e=>{const v=$('#attachTo').value;if(!v)return;if(v=='in'||v=='out'){S.draft[v]=S.pdf;S.target=null;go(v);toast('📎 تم إرفاق الملف بالنموذج')}else{const r=(await DB.all()).find(x=>x.id==v);r.file=S.pdf;await DB.put(r);toast('📎 أُرفق بالسجل '+r.no);S.pages=[];renderPages();$('#res').hidden=true}};
+$('#attachTo').onchange=e=>attachPdf(e.target.value);
+$('#attachDraft').onclick=()=>attachPdf(S.target);
+async function attachPdf(target){
+  const pdf=S.pdf;
+  if(!target||!pdf)return;
+  if(target==='in'||target==='out'){
+    S.draft[target]=pdf;S.target=null;clearScan();go(target);toast('📎 تم إرفاق الملف بالنموذج');return;
+  }
+  const record=(await DB.all()).find(r=>String(r.id)===target);
+  if(!record||record.file)return toast('⚠️ لم يعد هذا السجل متاحًا للإرفاق');
+  record.file=pdf;await DB.put(record);
+  if(S.pdf===pdf){S.target=null;clearScan()}
+  toast('📎 أُرفق بالسجل '+record.no);
+}
 $('#watchBtn').onclick=async()=>{if(!window.showDirectoryPicker)return toast('⚠️ هذه الميزة تعمل في Chrome أو Edge');try{S.dir=await showDirectoryPicker();S.seen=new Set();for await(const[n,h]of S.dir.entries())if(h.kind=='file')S.seen.add(n+(await h.getFile()).lastModified);clearInterval(S.timer);S.timer=setInterval(poll,1500);$('#watchSt').textContent='🟢 تتم المراقبة: '+S.dir.name+' — امسح ورقة وستظهر هنا';toast('🟢 بدأت مراقبة المجلد')}catch{}};
 async function poll(){if(S.busy)return;S.busy=1;try{const nw=[];for await(const[n,h]of S.dir.entries()){if(h.kind!='file'||!/\.(jpe?g|png|bmp|webp|pdf)$/i.test(n))continue;const f=await h.getFile(),k=n+f.lastModified;if(S.seen.has(k)||Date.now()-f.lastModified<900)continue;S.seen.add(k);nw.push(f)}if(nw.length){$('#tscan').classList.add('dot');await ingest(nw)}}catch{clearInterval(S.timer);$('#watchSt').textContent='⚪ توقفت المراقبة'}S.busy=0}
 /* ===== settings ===== */
@@ -249,7 +315,7 @@ let dp;addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('#in
 addEventListener('resize',moveInd);
 if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 (async()=>{if(localStorage.th){document.documentElement.dataset.th=localStorage.th;$('#th').textContent=localStorage.th=='light'?'☀️':'🌙'}
-await DB.open();navigator.storage?.persist?.();await document.fonts.ready;const t=location.hash.slice(1);go(['home','in','out','scan','arch','set'].includes(t)?t:'home')})();
+await DB.open();navigator.storage?.persist?.();await document.fonts.ready;WindowsScanner.init();const t=location.hash.slice(1);go(['home','in','out','scan','arch','set'].includes(t)?t:'home')})();
 </script>
 </body>
 </html>
