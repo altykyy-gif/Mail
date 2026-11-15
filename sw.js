@@ -1,12 +1,13 @@
-const CACHE = 'sulug-v3';
+const CACHE = 'sulug-v4';
 const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'logo.jpg', 'icon-192.png',
-  'icon-512.png', 'fonts/amiri-400.woff2', 'fonts/amiri-700.woff2', 'scanner/web.js', 'scanner/installer.txt'];
+  'icon-512.png', 'fonts/amiri-400.woff2', 'fonts/amiri-700.woff2', 'scanner/windows-client.js', 'scanner/installer.txt'];
 const assetUrls = new Set(ASSETS.map(asset => new URL(asset, self.registration.scope).href));
-const currentUrls = new Set(['./', 'index.html', 'scanner/web.js']
+const currentUrls = new Set(['./', 'index.html', 'scanner/windows-client.js']
   .map(asset => new URL(asset, self.registration.scope).href));
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
+  const freshAssets = [...assetUrls].map(url => new Request(url, {cache: 'reload'}));
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(freshAssets)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', event => {
   event.waitUntil(caches.keys().then(keys => Promise.all(keys
@@ -21,7 +22,7 @@ self.addEventListener('fetch', event => {
   event.respondWith(caches.open(CACHE).then(async cache => {
     if (currentUrls.has(url.href)) {
       try {
-        const response = await fetch(event.request);
+        const response = await fetch(event.request, {cache: 'no-cache'});
         if (response.ok) {
           await cache.put(url.href, response.clone());
           return response;
