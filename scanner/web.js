@@ -25,14 +25,16 @@ const WindowsScanner = (() => {
 
   function request(action, id) {
     return new Promise((resolve, reject) => {
+      const runtime = window.chrome?.runtime;
       let port;
       try {
-        port = window.chrome?.runtime?.connect(extensionId, {name: 'suluq-mail-scanner'});
+        port = runtime?.connect(extensionId, {name: 'suluq-mail-scanner'});
       } catch {
         reject(new Error('extension_missing'));
         return;
       }
-      if (!port) {
+      if (typeof port?.onDisconnect?.addListener !== 'function' ||
+          typeof port?.onMessage?.addListener !== 'function' || typeof port?.postMessage !== 'function') {
         reject(new Error('extension_missing'));
         return;
       }
@@ -45,16 +47,12 @@ const WindowsScanner = (() => {
         if (settled) return;
         settled = true;
         clearTimeout(timeout);
-        port.disconnect();
+        try { port.disconnect?.(); } catch { /* The port may already be closed. */ }
         if (code) reject(new Error(code));
         else resolve(value);
       }
 
-      port.onDisconnect.addListener(() => {
-        void window.chrome.runtime.lastError;
-        finish('extension_missing');
-      });
-      port.onMessage.addListener(message => {
+      function onMessage(message) {
         if (message.type === 'error') {
           finish(message.code || 'scanner_error');
         } else if (action === 'list' && message.type === 'devices' && Array.isArray(message.devices)) {
@@ -74,8 +72,13 @@ const WindowsScanner = (() => {
         } else {
           finish('scanner_error');
         }
-      });
+      }
       try {
+        port.onDisconnect.addListener(() => {
+          void runtime.lastError;
+          finish('extension_missing');
+        });
+        port.onMessage.addListener(onMessage);
         port.postMessage(action === 'list' ? {action} : {action, id});
       } catch {
         finish('extension_missing');
@@ -118,9 +121,8 @@ const WindowsScanner = (() => {
     } catch (error) {
       next = [];
       status(messages[error.message] || 'تعذّر البحث عن الماسحات. أعد المحاولة.');
-      const needsSetup = ['extension_missing', 'host_missing'].includes(error.message);
-      if (needsSetup && setup.hidden) setup.open = true;
-      setup.hidden = !needsSetup;
+      if (setup.hidden) setup.open = true;
+      setup.hidden = false;
     } finally {
       checking = false;
       updateDevices(next);
