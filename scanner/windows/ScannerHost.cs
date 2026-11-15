@@ -11,6 +11,15 @@ internal static class ScannerHost
     private const int MaxImageBytes = 16 * 1024 * 1024;
     private const int ImageChunkBytes = 240 * 1024;
     private const string JpegFormat = "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}";
+    private const int HorizontalBedSize = 3074, VerticalBedSize = 3075;
+    private const int PageSize = 3097, Preview = 3100, AutoCrop = 4170;
+    private const int XResolution = 6147, YResolution = 6148;
+    private const int XPosition = 6149, YPosition = 6150;
+    private const int XExtent = 6151, YExtent = 6152;
+    private const int MaxHorizontalSize = 6165, MaxVerticalSize = 6166;
+    private const int FinalScan = 0, AutoCropDisabled = 0;
+    private const int CustomPage = 2, A4Page = 0, RangeSubtype = 1;
+    private const int FullPageDpi = 300;
     private static readonly JavaScriptSerializer Json = new JavaScriptSerializer();
     private static Stream output;
 
@@ -108,7 +117,9 @@ internal static class ScannerHost
             }
 
             // WIA uses the first child for the flatbed when one is available.
-            dynamic image = device.Items[1].Transfer(JpegFormat);
+            dynamic item = device.Items[1];
+            ConfigureFullPage(device, item);
+            dynamic image = item.Transfer(JpegFormat);
             if (!String.Equals((string)image.FormatID, JpegFormat, StringComparison.OrdinalIgnoreCase))
             {
                 dynamic converter = Activator.CreateInstance(Type.GetTypeFromProgID("WIA.ImageProcess", true));
@@ -140,6 +151,91 @@ internal static class ScannerHost
             return;
         }
         SendError("device_missing");
+    }
+
+    internal static void ConfigureFullPage(dynamic device, dynamic item)
+    {
+        Dictionary<int, object> scan = IndexProperties(item.Properties);
+        Dictionary<int, object> root = IndexProperties(device.Properties);
+        SetProperty(Property(scan, Preview) ?? Property(root, Preview), FinalScan);
+        SetProperty(Property(scan, AutoCrop), AutoCropDisabled);
+
+        dynamic xResolution = Property(scan, XResolution);
+        dynamic yResolution = Property(scan, YResolution);
+        int originalXResolution = IntValue(xResolution);
+        // Full-bed images at very high resolutions can exceed the transfer limit.
+        if (xResolution != null && yResolution != null &&
+            Math.Max(originalXResolution, IntValue(yResolution)) > FullPageDpi &&
+            SetProperty(xResolution, FullPageDpi) && !SetProperty(yResolution, FullPageDpi))
+            SetProperty(xResolution, originalXResolution);
+
+        dynamic pageSize = Property(scan, PageSize) ?? Property(root, PageSize);
+        if (!SetProperty(pageSize, CustomPage)) SetProperty(pageSize, A4Page);
+
+        dynamic xPosition = Property(scan, XPosition);
+        dynamic yPosition = Property(scan, YPosition);
+        SetProperty(xPosition, 0);
+        SetProperty(yPosition, 0);
+        int bedWidth = IntValue(Property(scan, MaxHorizontalSize) ?? Property(root, HorizontalBedSize));
+        int bedHeight = IntValue(Property(scan, MaxVerticalSize) ?? Property(root, VerticalBedSize));
+        SetFullExtent(Property(scan, XExtent), bedWidth, IntValue(xResolution), IntValue(xPosition));
+        SetFullExtent(Property(scan, YExtent), bedHeight, IntValue(yResolution), IntValue(yPosition));
+    }
+
+    private static Dictionary<int, object> IndexProperties(dynamic properties)
+    {
+        var indexed = new Dictionary<int, object>();
+        for (int i = 1; i <= (int)properties.Count; i++)
+        {
+            dynamic property = properties[i];
+            indexed[(int)property.PropertyID] = property;
+        }
+        return indexed;
+    }
+
+    private static dynamic Property(Dictionary<int, object> properties, int id)
+    {
+        object property;
+        return properties.TryGetValue(id, out property) ? property : null;
+    }
+
+    private static int IntValue(dynamic property)
+    {
+        return property == null ? 0 : (int)property.Value;
+    }
+
+    private static bool SetProperty(dynamic property, int value)
+    {
+        if (property == null) return false;
+        try
+        {
+            if ((int)property.Value == value) return true;
+            if ((bool)property.IsReadOnly) return false;
+            property.Value = value;
+            return true;
+        }
+        catch (COMException)
+        {
+            // Optional settings or individual values may be unavailable on a driver.
+            return false;
+        }
+    }
+
+    private static void SetFullExtent(dynamic extent, int bedMils, int dpi, int position)
+    {
+        if (extent == null) return;
+        // WIA reports the platen in thousandths of an inch and the scan area in pixels.
+        int pixels = (int)Math.Min(Int32.MaxValue, (long)Math.Max(0, bedMils) * Math.Max(0, dpi) / 1000);
+        if (pixels > 0) pixels = Math.Max(1, pixels - Math.Max(0, position));
+        if ((int)extent.SubType == RangeSubtype)
+        {
+            int min = (int)extent.SubTypeMin;
+            int max = (int)extent.SubTypeMax;
+            int step = Math.Max(1, (int)extent.SubTypeStep);
+            int limit = pixels > 0 ? Math.Min(pixels, max) : max;
+            pixels = min + Math.Max(0, limit - min) / step * step;
+        }
+        if (pixels > 0) SetProperty(extent, pixels);
     }
 
     private static string WiaError(COMException error)

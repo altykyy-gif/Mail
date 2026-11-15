@@ -3,9 +3,9 @@ RequestExecutionLevel user
 Name "ماسح منظومة الصادر والوارد"
 InstallDir "$LOCALAPPDATA\SuluqMailScanner"
 OutFile "../Mail-Scanner-Setup.exe"
-VIProductVersion "1.0.0.0"
+VIProductVersion "1.0.1.0"
 VIAddVersionKey /LANG=1025 "ProductName" "ماسح منظومة الصادر والوارد"
-VIAddVersionKey /LANG=1025 "FileVersion" "1.0.0"
+VIAddVersionKey /LANG=1025 "FileVersion" "1.0.1"
 VIAddVersionKey /LANG=1025 "FileDescription" "أداة تثبيت ماسح منظومة الصادر والوارد"
 VIAddVersionKey /LANG=1025 "CompanyName" "مراقبة التربية والتعليم سلوق"
 VIAddVersionKey /LANG=1025 "LegalCopyright" "يحيى التيغي"
@@ -15,7 +15,7 @@ VIAddVersionKey /LANG=1025 "LegalCopyright" "يحيى التيغي"
 !endif
 
 !include "MUI2.nsh"
-!define MUI_FINISHPAGE_TEXT "افتح صفحة الإضافات في كروم أو إيدج، وفعّل وضع المطوّر. اضغط على تحميل إضافة غير مضغوطة واختر المجلد التالي، ثم حدّث صفحة المنظومة.$\r$\n$\r$\n$INSTDIR\extension"
+!define MUI_FINISHPAGE_TEXT "حدّث صفحة المنظومة بعد انتهاء التثبيت. عند التجهيز لأول مرة، حمّل الإضافة غير المضغوطة في كروم أو إيدج من المجلد التالي.$\r$\n$\r$\n$INSTDIR\extension"
 !define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\extension"
 !define MUI_FINISHPAGE_SHOWREADME_TEXT "فتح مجلد الإضافة"
 !insertmacro MUI_PAGE_INSTFILES
@@ -39,7 +39,7 @@ Section
   WriteRegStr HKCU "${EDGE_HOST}" "" "$INSTDIR\ly.suluq.mail_scanner.json"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayName" "ماسح منظومة الصادر والوارد"
-  WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayVersion" "1.0.0"
+  WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayVersion" "1.0.1"
   WriteRegStr HKCU "${UNINSTALL_KEY}" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
   WriteRegDWORD HKCU "${UNINSTALL_KEY}" "NoModify" 1
   WriteRegDWORD HKCU "${UNINSTALL_KEY}" "NoRepair" 1
