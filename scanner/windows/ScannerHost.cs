@@ -16,10 +16,13 @@ internal static class ScannerHost
     private const int XResolution = 6147, YResolution = 6148;
     private const int XPosition = 6149, YPosition = 6150;
     private const int XExtent = 6151, YExtent = 6152;
+    private const int Orientation = 6156;
     private const int MaxHorizontalSize = 6165, MaxVerticalSize = 6166;
     private const int FinalScan = 0, AutoCropDisabled = 0;
     private const int CustomPage = 2, A4Page = 0, RangeSubtype = 1;
-    private const int FullPageDpi = 300;
+    private const int Portrait = 0, Landscape = 1, RotatedLandscape = 3;
+    private const int A4WidthMils = 8267, A4HeightMils = 11692;
+    private const int MaxScanDpi = 300;
     private static readonly JavaScriptSerializer Json = new JavaScriptSerializer();
     private static Stream output;
 
@@ -118,7 +121,7 @@ internal static class ScannerHost
 
             // WIA uses the first child for the flatbed when one is available.
             dynamic item = device.Items[1];
-            ConfigureFullPage(device, item);
+            ConfigureA4Page(device, item);
             dynamic image = item.Transfer(JpegFormat);
             if (!String.Equals((string)image.FormatID, JpegFormat, StringComparison.OrdinalIgnoreCase))
             {
@@ -153,7 +156,7 @@ internal static class ScannerHost
         SendError("device_missing");
     }
 
-    internal static void ConfigureFullPage(dynamic device, dynamic item)
+    internal static void ConfigureA4Page(dynamic device, dynamic item)
     {
         Dictionary<int, object> scan = IndexProperties(item.Properties);
         Dictionary<int, object> root = IndexProperties(device.Properties);
@@ -163,23 +166,43 @@ internal static class ScannerHost
         dynamic xResolution = Property(scan, XResolution);
         dynamic yResolution = Property(scan, YResolution);
         int originalXResolution = IntValue(xResolution);
-        // Full-bed images at very high resolutions can exceed the transfer limit.
+        // High resolutions can exceed the browser transfer limit.
         if (xResolution != null && yResolution != null &&
-            Math.Max(originalXResolution, IntValue(yResolution)) > FullPageDpi &&
-            SetProperty(xResolution, FullPageDpi) && !SetProperty(yResolution, FullPageDpi))
+            Math.Max(originalXResolution, IntValue(yResolution)) > MaxScanDpi &&
+            SetProperty(xResolution, MaxScanDpi) && !SetProperty(yResolution, MaxScanDpi))
             SetProperty(xResolution, originalXResolution);
 
-        dynamic pageSize = Property(scan, PageSize) ?? Property(root, PageSize);
-        if (!SetProperty(pageSize, CustomPage)) SetProperty(pageSize, A4Page);
+        int bedWidth = IntValue(Property(scan, MaxHorizontalSize) ?? Property(root, HorizontalBedSize));
+        int bedHeight = IntValue(Property(scan, MaxVerticalSize) ?? Property(root, VerticalBedSize));
+        dynamic orientation = Property(scan, Orientation) ?? Property(root, Orientation);
+        int currentOrientation = IntValue(orientation);
+        bool landscape = currentOrientation == Landscape || currentOrientation == RotatedLandscape;
+        bool portraitFits = bedWidth >= A4WidthMils && bedHeight >= A4HeightMils;
+        bool landscapeFits = bedWidth >= A4HeightMils && bedHeight >= A4WidthMils;
+        if (portraitFits != landscapeFits && landscape != landscapeFits)
+        {
+            landscape = landscapeFits;
+            SetProperty(orientation, landscape ? Landscape : Portrait);
+        }
 
+        int paperWidth = landscape ? A4HeightMils : A4WidthMils;
+        int paperHeight = landscape ? A4WidthMils : A4HeightMils;
+        dynamic xExtent = Property(scan, XExtent);
+        dynamic yExtent = Property(scan, YExtent);
+        dynamic pageSize = Property(scan, PageSize) ?? Property(root, PageSize);
+        if (SetProperty(pageSize, A4Page) &&
+            MatchesPaperExtent(xExtent, paperWidth, IntValue(xResolution)) &&
+            MatchesPaperExtent(yExtent, paperHeight, IntValue(yResolution)))
+            return;
+
+        // Some flatbed drivers expose only the pixel bounds and ignore page presets.
+        SetProperty(pageSize, CustomPage);
         dynamic xPosition = Property(scan, XPosition);
         dynamic yPosition = Property(scan, YPosition);
         SetProperty(xPosition, 0);
         SetProperty(yPosition, 0);
-        int bedWidth = IntValue(Property(scan, MaxHorizontalSize) ?? Property(root, HorizontalBedSize));
-        int bedHeight = IntValue(Property(scan, MaxVerticalSize) ?? Property(root, VerticalBedSize));
-        SetFullExtent(Property(scan, XExtent), bedWidth, IntValue(xResolution), IntValue(xPosition));
-        SetFullExtent(Property(scan, YExtent), bedHeight, IntValue(yResolution), IntValue(yPosition));
+        SetPaperExtent(xExtent, paperWidth, bedWidth, IntValue(xResolution), IntValue(xPosition));
+        SetPaperExtent(yExtent, paperHeight, bedHeight, IntValue(yResolution), IntValue(yPosition));
     }
 
     private static Dictionary<int, object> IndexProperties(dynamic properties)
@@ -221,18 +244,33 @@ internal static class ScannerHost
         }
     }
 
-    private static void SetFullExtent(dynamic extent, int bedMils, int dpi, int position)
+    private static int PaperPixels(int mils, int dpi)
     {
-        if (extent == null) return;
-        // WIA reports the platen in thousandths of an inch and the scan area in pixels.
-        int pixels = (int)Math.Min(Int32.MaxValue, (long)Math.Max(0, bedMils) * Math.Max(0, dpi) / 1000);
-        if (pixels > 0) pixels = Math.Max(1, pixels - Math.Max(0, position));
+        return (int)Math.Min(Int32.MaxValue, ((long)mils * dpi + 500) / 1000);
+    }
+
+    private static bool MatchesPaperExtent(dynamic extent, int paperMils, int dpi)
+    {
+        if (extent == null || dpi <= 0) return true;
+        return Math.Abs((long)IntValue(extent) - PaperPixels(paperMils, dpi)) <= Math.Max(2, dpi / 100);
+    }
+
+    private static void SetPaperExtent(dynamic extent, int paperMils, int bedMils, int dpi, int position)
+    {
+        if (extent == null || dpi <= 0) return;
+        // WIA reports the paper and platen in thousandths of an inch.
+        int pixels = PaperPixels(paperMils, dpi);
+        if (bedMils > 0)
+        {
+            int available = (int)Math.Min(Int32.MaxValue, (long)bedMils * dpi / 1000);
+            pixels = Math.Min(pixels, Math.Max(1, available - Math.Max(0, position)));
+        }
         if ((int)extent.SubType == RangeSubtype)
         {
             int min = (int)extent.SubTypeMin;
             int max = (int)extent.SubTypeMax;
             int step = Math.Max(1, (int)extent.SubTypeStep);
-            int limit = pixels > 0 ? Math.Min(pixels, max) : max;
+            int limit = Math.Min(pixels, max);
             pixels = min + Math.Max(0, limit - min) / step * step;
         }
         if (pixels > 0) SetProperty(extent, pixels);

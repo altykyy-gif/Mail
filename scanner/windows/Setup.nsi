@@ -3,9 +3,9 @@ RequestExecutionLevel user
 Name "ماسح منظومة الصادر والوارد"
 InstallDir "$LOCALAPPDATA\SuluqMailScanner"
 OutFile "../Mail-Scanner-Setup.exe"
-VIProductVersion "1.0.1.0"
+VIProductVersion "1.0.2.0"
 VIAddVersionKey /LANG=1025 "ProductName" "ماسح منظومة الصادر والوارد"
-VIAddVersionKey /LANG=1025 "FileVersion" "1.0.1"
+VIAddVersionKey /LANG=1025 "FileVersion" "1.0.2"
 VIAddVersionKey /LANG=1025 "FileDescription" "أداة تثبيت ماسح منظومة الصادر والوارد"
 VIAddVersionKey /LANG=1025 "CompanyName" "مراقبة التربية والتعليم سلوق"
 VIAddVersionKey /LANG=1025 "LegalCopyright" "يحيى التيغي"
@@ -39,7 +39,7 @@ Section
   WriteRegStr HKCU "${EDGE_HOST}" "" "$INSTDIR\ly.suluq.mail_scanner.json"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayName" "ماسح منظومة الصادر والوارد"
-  WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayVersion" "1.0.1"
+  WriteRegStr HKCU "${UNINSTALL_KEY}" "DisplayVersion" "1.0.2"
   WriteRegStr HKCU "${UNINSTALL_KEY}" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
   WriteRegDWORD HKCU "${UNINSTALL_KEY}" "NoModify" 1
   WriteRegDWORD HKCU "${UNINSTALL_KEY}" "NoRepair" 1
