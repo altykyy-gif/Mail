@@ -117,11 +117,15 @@ footer{text-align:center;color:var(--mut);padding:16px;font-size:1rem}footer b{c
 <h3>المسح المباشر من ويندوز</h3>
 <p class="chip" id="winStatus" role="status">جارٍ البحث عن الماسحات…</p>
 <div id="winSelection" hidden><label for="winDevice">الماسح المتصل</label><select id="winDevice" disabled></select></div>
-<div class="btns" id="winActions"><button class="btn g2" id="winScanPage" disabled>🖨️ مسح صفحة</button><button class="btn" id="winRefresh">إعادة البحث</button></div>
+<div class="btns" id="winActions">
+<button class="btn g2" id="winScanPage" disabled>🖨️ مسح صفحة</button>
+<button class="btn" id="winRefresh">إعادة البحث</button>
+<button class="btn" id="winDownloadSetup">⬇ تنزيل مثبّت الماسح</button>
+</div>
 <details id="winSetup" hidden>
 <summary>تجهيز الماسح لأول مرة</summary>
 <ol>
-<li><button class="btn" id="winDownloadSetup">تنزيل أداة الماسح لويندوز</button> ثم شغّلها.</li>
+<li>اضغط «تنزيل مثبّت الماسح» أعلاه، ثم شغّل الملف.</li>
 <li>افتح صفحة الإضافات في كروم أو إيدج من قائمة المتصفح، وفعّل «وضع المطوّر».</li>
 <li>اضغط «تحميل إضافة غير مضغوطة» واختر مجلد <code dir="ltr">%LOCALAPPDATA%\SuluqMailScanner\extension</code>.</li>
 <li>حدّث هذه الصفحة لعرض الماسحات التي يتعرّف عليها ويندوز.</li>
