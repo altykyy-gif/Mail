@@ -184,9 +184,14 @@ function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(
 const today=()=>new Date().toISOString().slice(0,10),stamp=()=>new Date().toISOString().slice(0,16).replace(/[-:T]/g,'');
 const sz=b=>b<1048576?(b/1024).toFixed(0)+' ك.ب':(b/1048576).toFixed(1)+' م.ب';
 /* ===== PDF ===== */
+const A4_WIDTH=595.28,A4_HEIGHT=841.89;
 function buildPDF(js){const en=new TextEncoder(),parts=[],offs=[];let len=0;const push=d=>{if(typeof d==='string')d=en.encode(d);parts.push(d);len+=d.length};const obj=(n,f)=>{offs[n]=len;push(`${n} 0 obj\n`);f();push('\nendobj\n')};
 push('%PDF-1.4\n');obj(1,()=>push('<</Type/Catalog/Pages 2 0 R>>'));obj(2,()=>push(`<</Type/Pages/Kids[${js.map((_,i)=>`${3+i*3} 0 R`).join(' ')}]/Count ${js.length}>>`));
-js.forEach((j,i)=>{const p=3+i*3,W=595,Hh=842,s=Math.min(W/j.w,Hh/j.h),w=j.w*s,h=j.h*s,c=`q ${w.toFixed(2)} 0 0 ${h.toFixed(2)} ${((W-w)/2).toFixed(2)} ${((Hh-h)/2).toFixed(2)} cm /I Do Q`;
+js.forEach((j,i)=>{
+  const p=3+i*3,landscape=j.w>j.h;
+  const W=landscape?A4_HEIGHT:A4_WIDTH,Hh=landscape?A4_WIDTH:A4_HEIGHT;
+  const scale=Math.min(W/j.w,Hh/j.h),w=j.w*scale,h=j.h*scale;
+  const c=`q ${w.toFixed(2)} 0 0 ${h.toFixed(2)} ${((W-w)/2).toFixed(2)} ${((Hh-h)/2).toFixed(2)} cm /I Do Q`;
 obj(p,()=>push(`<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${W} ${Hh}]/Contents ${p+1} 0 R/Resources<</XObject<</I ${p+2} 0 R>>>>>>`));obj(p+1,()=>push(`<</Length ${c.length}>>\nstream\n${c}\nendstream`));
 obj(p+2,()=>{push(`<</Type/XObject/Subtype/Image/Width ${j.w}/Height ${j.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${j.bytes.length}>>\nstream\n`);push(j.bytes);push('\nendstream')})});
 const tot=3+js.length*3,xr=len;push(`xref\n0 ${tot}\n0000000000 65535 f \n`);for(let i=1;i<tot;i++)push(String(offs[i]).padStart(10,'0')+' 00000 n \n');push(`trailer\n<</Size ${tot}/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`);return new Blob(parts,{type:'application/pdf'})}
@@ -277,7 +282,7 @@ $('#mkPdf').onclick=makePdf;$('#clrPg').onclick=clearScan;
 async function setRes(b,n,version=S.scanVersion){
   const a=(await DB.all()).filter(r=>!r.file).sort((x,z)=>z.created-x.created).slice(0,30);
   if(version!==S.scanVersion)return;
-  S.pdf=b;S.pdfName='مسح-'+stamp()+'.pdf';$('#res').hidden=false;$('#resT').textContent=`${n?n+' صفحة — ':''}${sz(b.size)}`;
+  S.pdf=b;S.pdfName='مسح-'+stamp()+'.pdf';$('#res').hidden=false;$('#resT').textContent=`${n?n+' صفحة — A4 — ':''}${sz(b.size)}`;
   $('#attachTo').innerHTML='<option value="">— اختر —</option><option value="in">نموذج «وارد جديد»</option><option value="out">نموذج «صادر جديد»</option>'+a.map(r=>`<option value="${r.id}">${E(r.no)} — ${E(r.subject)}</option>`).join('');
   const attach=$('#attachDraft');
   attach.hidden=!(S.target&&S.reviewScan);

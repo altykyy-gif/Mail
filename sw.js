@@ -1,4 +1,4 @@
-const CACHE = 'sulug-v5';
+const CACHE = 'sulug-v6';
 const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'logo.jpg', 'icon-192.png',
   'icon-512.png', 'fonts/amiri-400.woff2', 'fonts/amiri-700.woff2', 'scanner/windows-client.js', 'scanner/installer.txt'];
 const assetUrls = new Set(ASSETS.map(asset => new URL(asset, self.registration.scope).href));
