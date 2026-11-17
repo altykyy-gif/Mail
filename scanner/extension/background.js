@@ -3,7 +3,7 @@
 const hostName = 'ly.suluq.mail_scanner';
 const appOrigin = 'https://altykyy-gif.github.io';
 
-chrome.runtime.onConnectExternal.addListener(client => {
+function connectScanner(client) {
   const sender = client.sender;
   if (client.name !== 'suluq-mail-scanner' || sender?.frameId !== 0 ||
       sender.origin !== appOrigin || !sender.url?.startsWith(`${appOrigin}/Mail/`)) {
@@ -15,8 +15,12 @@ chrome.runtime.onConnectExternal.addListener(client => {
   let started = false;
   let ready = false;
   let completed = false;
+  let connected = true;
 
-  client.onDisconnect.addListener(() => native?.disconnect());
+  client.onDisconnect.addListener(() => {
+    connected = false;
+    native?.disconnect();
+  });
   client.onMessage.addListener(request => {
     if (started) return;
     started = true;
@@ -30,6 +34,7 @@ chrome.runtime.onConnectExternal.addListener(client => {
     try {
       native = chrome.runtime.connectNative(hostName);
       native.onMessage.addListener(message => {
+        if (!connected || completed) return;
         if (message.type === 'ready') {
           ready = true;
           return;
@@ -40,7 +45,7 @@ chrome.runtime.onConnectExternal.addListener(client => {
       native.onDisconnect.addListener(() => {
         void chrome.runtime.lastError;
         native = null;
-        if (!completed) {
+        if (connected && !completed) {
           client.postMessage({type: 'error', code: ready ? 'interrupted' : 'host_missing'});
         }
       });
@@ -49,4 +54,7 @@ chrome.runtime.onConnectExternal.addListener(client => {
       client.postMessage({type: 'error', code: 'host_missing'});
     }
   });
-});
+}
+
+chrome.runtime.onConnect.addListener(connectScanner);
+chrome.runtime.onConnectExternal.addListener(connectScanner);
