@@ -123,7 +123,8 @@ footer{text-align:center;color:var(--mut);padding:16px;font-size:1rem}footer b{c
 <button class="btn" id="winDownloadSetup">⬇ تنزيل مثبّت الماسح</button>
 </div>
 <details id="winSetup" hidden>
-<summary>تجهيز الماسح لأول مرة</summary>
+<summary>تثبيت أداة الماسح أو تحديثها</summary>
+<p id="winUpdate" hidden>ثبّت الإصدار الجديد، ثم اضغط «إعادة تحميل» بجانب الإضافة المثبتة في صفحة الإضافات وحدّث المنظومة.</p>
 <ol>
 <li>اضغط «تنزيل مثبّت الماسح» أعلاه، ثم شغّل الملف.</li>
 <li>افتح صفحة الإضافات في كروم أو إيدج من قائمة المتصفح، وفعّل «وضع المطوّر».</li>
@@ -140,6 +141,7 @@ footer{text-align:center;color:var(--mut);padding:16px;font-size:1rem}footer b{c
 <div class="card"><h2>الصفحات الممسوحة <span class="mut" id="pgN"></span></h2>
 <div class="row" style="margin-bottom:12px"><div><label>تحسين الصورة</label><select id="mode"><option value="enh">مستند واضح (موصى به)</option><option value="bw">أبيض وأسود</option><option value="orig">الأصل بالألوان</option></select></div><div><label>تحويل فوري إلى PDF</label><select id="auto"><option value="1">مفعّل — يتحول بعد كل مسح</option><option value="0">يدوي</option></select></div></div>
 <div class="pages" id="pages"></div>
+<p class="mut" id="scanIncomplete" role="status" hidden>أعاد الماسح مساحة أصغر من A4 في إحدى الصفحات. راجع الورقة وإعدادات الماسح قبل إرفاقها.</p>
 <div class="btns"><button class="btn p" id="mkPdf">📄 تحويل إلى PDF</button><button class="btn d" id="clrPg">مسح القائمة</button></div></div>
 <div class="card" id="res" hidden><h2>ملف PDF جاهز ✅</h2><p id="resT"></p>
 <div class="btns"><button class="btn g2" id="attachDraft" hidden>إرفاق بالنموذج</button><button class="btn g2" id="resDl">⬇ تنزيل</button><button class="btn" id="resView">👁 معاينة</button></div>
@@ -162,7 +164,7 @@ footer{text-align:center;color:var(--mut);padding:16px;font-size:1rem}footer b{c
 <div id="toasts"></div>
 <dialog id="dlg"><h2 id="dt"></h2><p id="dm" class="mut"></p><input id="di" autocomplete="off"><div class="btns"><button class="btn p" id="dok">موافق</button><button class="btn" id="dno">إلغاء</button></div></dialog>
 <div id="printArea"></div>
-<script src="scanner/windows-client.js"></script>
+<script src="scanner/windows-client.js?v=1.0.3"></script>
 <script>
 const $=(s,e=document)=>e.querySelector(s),$$=(s,e=document)=>[...e.querySelectorAll(s)];
 const E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -197,7 +199,54 @@ obj(p+2,()=>{push(`<</Type/XObject/Subtype/Image/Width ${j.w}/Height ${j.h}/Colo
 const tot=3+js.length*3,xr=len;push(`xref\n0 ${tot}\n0000000000 65535 f \n`);for(let i=1;i<tot;i++)push(String(offs[i]).padStart(10,'0')+' 00000 n \n');push(`trailer\n<</Size ${tot}/Root 1 0 R>>\nstartxref\n${xr}\n%%EOF`);return new Blob(parts,{type:'application/pdf'})}
 function renderPage(p,src=p.src){const r=p.rot%2,w=r?src.height:src.width,h=r?src.width:src.height,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.translate(w/2,h/2);x.rotate(p.rot*Math.PI/2);x.drawImage(src,-src.width/2,-src.height/2);x.setTransform(1,0,0,1,0,0);
 if(p.mode!=='orig'){const d=x.getImageData(0,0,w,h),a=d.data;for(let i=0;i<a.length;i+=4){let g=.299*a[i]+.587*a[i+1]+.114*a[i+2];g=p.mode==='bw'?(g>150?255:0):Math.max(0,Math.min(255,(g-105)*1.7+130));a[i]=a[i+1]=a[i+2]=g}x.putImageData(d,0,0)}return c}
-async function mkPage(f){const bm=await createImageBitmap(f),k=Math.min(1,2200/Math.max(bm.width,bm.height)),c=document.createElement('canvas');c.width=bm.width*k;c.height=bm.height*k;c.getContext('2d').drawImage(bm,0,0,c.width,c.height);bm.close();const t=document.createElement('canvas'),tk=260/Math.max(c.width,c.height);t.width=c.width*tk;t.height=c.height*tk;t.getContext('2d').drawImage(c,0,0,t.width,t.height);return{src:c,th:t,rot:0,mode:$('#mode').value}}
+function drawA4Scan(bitmap, canvas, paper) {
+  const measured = Number.isSafeInteger(paper.width) && paper.width > 0 &&
+    Number.isSafeInteger(paper.height) && paper.height > 0;
+  const landscape = measured ? paper.landscape === true : bitmap.width > bitmap.height;
+  const width = measured ? paper.width : bitmap.width;
+  const height = measured ? paper.height : bitmap.height;
+  const longSide = Math.max(2, Math.min(2200, Math.max(width, height)));
+  const shortSide = Math.round(longSide * 210 / 297);
+  canvas.width = landscape ? longSide : shortSide;
+  canvas.height = landscape ? shortSide : longSide;
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#fff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  if (measured) {
+    const scanWidth = Math.min(width, bitmap.width);
+    const scanHeight = Math.min(height, bitmap.height);
+    context.drawImage(bitmap, 0, 0, scanWidth, scanHeight, 0, 0,
+      scanWidth / width * canvas.width, scanHeight / height * canvas.height);
+    return scanWidth < width * 0.97 || scanHeight < height * 0.97;
+  }
+  const scale = Math.min(canvas.width / width, canvas.height / height);
+  context.drawImage(bitmap, (canvas.width - width * scale) / 2,
+    (canvas.height - height * scale) / 2, width * scale, height * scale);
+  return false;
+}
+async function mkPage(file, paper) {
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement('canvas');
+  let incomplete = false;
+  try {
+    if (paper) {
+      incomplete = drawA4Scan(bitmap, canvas, paper);
+    } else {
+      const scale = Math.min(1, 2200 / Math.max(bitmap.width, bitmap.height));
+      canvas.width = Math.max(1, Math.floor(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.floor(bitmap.height * scale));
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    }
+  } finally {
+    bitmap.close();
+  }
+  const thumbnail = document.createElement('canvas');
+  const scale = 260 / Math.max(canvas.width, canvas.height);
+  thumbnail.width = Math.max(1, Math.round(canvas.width * scale));
+  thumbnail.height = Math.max(1, Math.round(canvas.height * scale));
+  thumbnail.getContext('2d').drawImage(canvas, 0, 0, thumbnail.width, thumbnail.height);
+  return {src: canvas, th: thumbnail, rot: 0, mode: $('#mode').value, incomplete};
+}
 async function pagesToPdf(pg){const js=[];for(const p of pg){const c=renderPage(p),b=await new Promise(r=>c.toBlob(r,'image/jpeg',.86));js.push({bytes:new Uint8Array(await b.arrayBuffer()),w:c.width,h:c.height})}return buildPDF(js)}
 const isPdf=f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name);
 async function toPdf(f){return isPdf(f)?f:pagesToPdf([await mkPage(f)])}
@@ -254,11 +303,11 @@ $('#camGo').onclick=async()=>{try{S.stream=await navigator.mediaDevices.getUserM
 $('#camStop').onclick=()=>{S.stream?.getTracks().forEach(t=>t.stop());$('#vid').hidden=true;$('#camGo').hidden=false;$('#camSnap').hidden=$('#camStop').hidden=true};
 $('#camSnap').onclick=()=>{const v=$('#vid'),c=document.createElement('canvas'),batch=S.pages;c.width=v.videoWidth;c.height=v.videoHeight;if(!c.width||!c.height)return;c.getContext('2d').drawImage(v,0,0);c.toBlob(b=>b&&ingest([b],batch),'image/jpeg',.95)};
 $('#impF').onchange=e=>{const files=[...e.target.files],target=S.importTarget;e.target.value='';S.importTarget=null;if(!files.length)return;if(target)scanFor(target);else go('scan');ingest(files)};
-async function ingest(files,batch=S.pages){
+async function ingest(files,batch=S.pages,paper){
   let added=0, pdf;
   for(const file of files){
     if(file.name&&isPdf(file)){pdf=file;continue}
-    try{const page=await mkPage(file);if(batch!==S.pages)return;batch.push(page);added++}
+    try{const page=await mkPage(file,paper);if(batch!==S.pages)return;batch.push(page);added++}
     catch{toast('⚠️ تعذّر فتح صورة المستند')}
   }
   if(batch!==S.pages)return;
@@ -269,7 +318,7 @@ async function ingest(files,batch=S.pages){
 }
 function invalidateScan(){clearTimeout(S.deb);S.scanVersion++;S.pdf=null;$('#res').hidden=true}
 function clearScan(){S.pages=[];S.reviewScan=false;invalidateScan();renderPages()}
-function renderPages(){$('#pgN').textContent=S.pages.length?`(${S.pages.length})`:'';const el=$('#pages');el.innerHTML=S.pages.length?'':'<div class="empty" style="grid-column:1/-1">لا توجد صفحات ممسوحة. امسح صفحة أو استورد ملفًا.</div>';
+function renderPages(){$('#pgN').textContent=S.pages.length?`(${S.pages.length})`:'';$('#scanIncomplete').hidden=!S.pages.some(page=>page.incomplete);const el=$('#pages');el.innerHTML=S.pages.length?'':'<div class="empty" style="grid-column:1/-1">لا توجد صفحات ممسوحة. امسح صفحة أو استورد ملفًا.</div>';
 S.pages.forEach((p,i)=>{const d=document.createElement('div');d.className='pg';d.append(renderPage(p,p.th));const b=document.createElement('div');[['↻',()=>p.rot=(p.rot+1)%4],['🎨',()=>p.mode={enh:'bw',bw:'orig',orig:'enh'}[p.mode]],['▶',()=>i>0&&S.pages.splice(i-1,0,...S.pages.splice(i,1))],['◀',()=>i<S.pages.length-1&&S.pages.splice(i+1,0,...S.pages.splice(i,1))],['✖',()=>S.pages.splice(i,1)]].forEach(([t,fn])=>{const x=document.createElement('button');x.textContent=t;x.onclick=()=>{fn();invalidateScan();renderPages();if(S.pages.length&&$('#auto').value==='1')S.deb=setTimeout(makePdf,1400)};b.append(x)});d.append(b);el.append(d)})}
 async function makePdf(){
   if(!S.pages.length)return toast('⚠️ لا توجد صفحات');

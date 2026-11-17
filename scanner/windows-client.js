@@ -2,6 +2,7 @@
 
 const WindowsScanner = (() => {
   const extensionId = 'mdojliahacnjhobkccddigaglkmccidj';
+  const installerVersion = '1.0.3';
   const supported = /^Win/i.test(navigator.userAgentData?.platform || navigator.platform) &&
     /(?:Chrome|Edg)\//.test(navigator.userAgent);
   const maxImageBytes = 16 * 1024 * 1024;
@@ -20,44 +21,84 @@ const WindowsScanner = (() => {
     interrupted: 'انقطع الاتصال بأداة الماسح. أعد المحاولة.'
   };
   let devices = [];
-  let checking = false;
+  let deviceRequest;
+  let pollTimer;
+  let hostVersion;
+  let extensionReady = false;
+  let discoveryError;
   let scanning = false;
 
-  function request(action, id) {
-    return new Promise((resolve, reject) => {
-      const runtime = window.chrome?.runtime;
-      let port;
-      try {
-        port = runtime?.connect(extensionId, {name: 'suluq-mail-scanner'});
-      } catch {
-        reject(new Error('extension_missing'));
-        return;
-      }
-      if (typeof port?.onDisconnect?.addListener !== 'function' ||
-          typeof port?.onMessage?.addListener !== 'function' || typeof port?.postMessage !== 'function') {
-        reject(new Error('extension_missing'));
-        return;
-      }
+  function connectLegacy(command, receive, fail) {
+    const runtime = window.chrome?.runtime;
+    const port = runtime.connect(extensionId, {name: 'suluq-mail-scanner'});
+    port.onDisconnect.addListener(() => {
+      const code = runtime.lastError ? 'extension_missing' : 'interrupted';
+      fail(code);
+    });
+    port.onMessage.addListener(message => receive(message, false));
+    try {
+      port.postMessage(command);
+    } catch (error) {
+      port.disconnect();
+      throw error;
+    }
+    return () => port.disconnect();
+  }
 
+  function connect(command, receive, fail) {
+    if (typeof MessageChannel !== 'function') return connectLegacy(command, receive, fail);
+    const {port1, port2} = new MessageChannel();
+    let ready = false;
+    let close = () => {
+      port1.postMessage({type: 'close'});
+      port1.close();
+    };
+    const probeTimer = setTimeout(() => {
+      close();
+      close = () => {};
+      try { close = connectLegacy(command, receive, fail); }
+      catch { fail('extension_missing'); }
+    }, 800);
+    port1.onmessage = ({data}) => {
+      if (ready) {
+        receive(data, true);
+      } else if (data?.type === 'bridge_ready') {
+        ready = true;
+        clearTimeout(probeTimer);
+        port1.postMessage(command);
+      }
+    };
+    window.postMessage({type: 'suluq-mail-scanner-connect'}, location.origin, [port2]);
+    return () => {
+      clearTimeout(probeTimer);
+      close();
+    };
+  }
+
+  function request(action, id, signal) {
+    return new Promise((resolve, reject) => {
       const chunks = [];
       let size = 0;
       let settled = false;
-      const timeout = setTimeout(() => finish('timeout'), action === 'list' ? 8000 : 120000);
+      let close = () => {};
+      const abort = () => finish('cancelled');
+      const timeout = setTimeout(() => finish('timeout'), action === 'list' ? 25000 : 120000);
       function finish(code, value) {
         if (settled) return;
         settled = true;
         clearTimeout(timeout);
-        try { port.disconnect?.(); } catch { /* The port may already be closed. */ }
+        signal?.removeEventListener('abort', abort);
+        try { close(); } catch { /* The port may already be closed. */ }
         if (code) reject(new Error(code));
         else resolve(value);
       }
 
-      function onMessage(message) {
-        if (message.type === 'error') {
+      function onMessage(message, relayed) {
+        if (message?.type === 'error') {
           finish(message.code || 'scanner_error');
-        } else if (action === 'list' && message.type === 'devices' && Array.isArray(message.devices)) {
-          finish(null, message.devices);
-        } else if (action === 'scan' && message.type === 'image') {
+        } else if (action === 'list' && message?.type === 'devices' && Array.isArray(message.devices)) {
+          finish(null, {devices: message.devices, version: message.version, relayed});
+        } else if (action === 'scan' && message?.type === 'image') {
           try {
             if (typeof message.data !== 'string' || message.data.length > 330000) throw new Error();
             const bytes = Uint8Array.from(atob(message.data), char => char.charCodeAt(0));
@@ -67,19 +108,15 @@ const WindowsScanner = (() => {
           } catch {
             finish('scanner_error');
           }
-        } else if (action === 'scan' && message.type === 'done' && size) {
-          finish(null, new Blob(chunks, {type: 'image/jpeg'}));
+        } else if (action === 'scan' && message?.type === 'done' && size) {
+          finish(null, {image: new Blob(chunks, {type: 'image/jpeg'}), paper: message.paper || {}});
         } else {
           finish('scanner_error');
         }
       }
+      signal?.addEventListener('abort', abort, {once: true});
       try {
-        port.onDisconnect.addListener(() => {
-          void runtime.lastError;
-          finish('extension_missing');
-        });
-        port.onMessage.addListener(onMessage);
-        port.postMessage(action === 'list' ? {action} : {action, id});
+        close = connect(action === 'list' ? {action} : {action, id}, onMessage, finish);
       } catch {
         finish('extension_missing');
       }
@@ -103,53 +140,86 @@ const WindowsScanner = (() => {
     devices = next;
     $('#winSelection').hidden = !devices.length;
     select.disabled = scanning || !devices.length;
-    $('#winScanPage').disabled = checking || scanning || !devices.length;
-    $('#winRefresh').disabled = checking || scanning;
+    $('#winScanPage').disabled = scanning || !devices.length;
+    $('#winRefresh').disabled = !!deviceRequest || scanning;
+  }
+
+  function visible() {
+    return !document.hidden && !$('#p-scan').hidden;
+  }
+
+  function scheduleRefresh() {
+    clearTimeout(pollTimer);
+    if (visible() && !scanning) pollTimer = setTimeout(refresh, devices.length && !discoveryError ? 8000 : 3500);
+  }
+
+  function discoveryStatus() {
+    const setup = $('#winSetup');
+    const needsSetup = ['extension_missing', 'host_missing'].includes(discoveryError);
+    const needsUpdate = !discoveryError && (hostVersion !== installerVersion || !extensionReady);
+    const version = hostVersion ? ` · أداة الماسح ${hostVersion}` : '';
+    if (discoveryError) {
+      const detail = messages[discoveryError] || 'تعذّر البحث عن الماسحات.';
+      status(needsSetup && !hostVersion ? detail : `${detail} جارٍ إعادة البحث تلقائيًا…`);
+    } else {
+      status(devices.length ? `الماسحات المتاحة (${devices.length})${version}` :
+        `لم يجد ويندوز ماسحًا. سيستمر البحث تلقائيًا.${version}`, !!devices.length);
+    }
+    $('#winUpdate').hidden = !needsUpdate;
+    if (setup.hidden && (needsSetup || needsUpdate)) setup.open = true;
+    setup.hidden = !(needsSetup || needsUpdate);
   }
 
   async function refresh() {
-    if (!supported || checking || scanning) return;
-    checking = true;
+    if (!supported || !visible() || deviceRequest || scanning) return;
+    clearTimeout(pollTimer);
+    const check = new AbortController();
+    deviceRequest = check;
     updateDevices(devices);
-    const setup = $('#winSetup');
-    let next = devices;
     try {
-      next = (await request('list')).filter(device => device && typeof device.id === 'string' && device.id);
-      status(next.length ? `الماسحات المتاحة (${next.length})` :
-        'لم يجد ويندوز ماسحًا. تحقق من تشغيل الجهاز وتثبيت تعريف المسح.', !!next.length);
-      setup.hidden = true;
-    } catch (error) {
-      next = [];
-      status(messages[error.message] || 'تعذّر البحث عن الماسحات. أعد المحاولة.');
-      if (setup.hidden) setup.open = true;
-      setup.hidden = false;
-    } finally {
-      checking = false;
+      const result = await request('list', null, check.signal);
+      const next = result.devices.filter(device => device && typeof device.id === 'string' && device.id);
+      hostVersion = typeof result.version === 'string' ? result.version : '';
+      extensionReady = result.relayed;
+      discoveryError = null;
       updateDevices(next);
+    } catch (error) {
+      if (error.message !== 'cancelled') {
+        discoveryError = error.message;
+        if (error.message === 'device_missing' || !hostVersion) updateDevices([]);
+      }
+    } finally {
+      deviceRequest = null;
+      updateDevices(devices);
+      if (!scanning) discoveryStatus();
+      scheduleRefresh();
     }
   }
 
   async function scan() {
-    if (checking || scanning) return;
+    if (scanning) return;
     const id = $('#winDevice').value;
     if (!id) return;
     const batch = S.pages;
     const label = $('#winDevice').selectedOptions[0].textContent;
     scanning = true;
+    clearTimeout(pollTimer);
+    deviceRequest?.abort();
     updateDevices(devices);
     status(`جارٍ المسح من ${label}…`, true);
     try {
-      const image = await request('scan', id);
+      const {image, paper} = await request('scan', id);
       if (batch === S.pages) {
         S.reviewScan = true;
-        await ingest([image], batch);
+        await ingest([image], batch, paper);
       }
     } catch (error) {
       toast('⚠️ ' + (messages[error.message] || 'تعذّر المسح. تحقق من الماسح وأعد المحاولة.'));
     } finally {
       scanning = false;
       updateDevices(devices);
-      status(`الماسحات المتاحة (${devices.length})`, !!devices.length);
+      if (hostVersion !== undefined || discoveryError) discoveryStatus();
+      scheduleRefresh();
     }
   }
 
@@ -161,7 +231,7 @@ const WindowsScanner = (() => {
       if (!response.ok) throw new Error();
       const bytes = Uint8Array.from(atob(await response.text()), char => char.charCodeAt(0));
       if (bytes[0] !== 0x4d || bytes[1] !== 0x5a) throw new Error();
-      dl(new Blob([bytes], {type: 'application/octet-stream'}), 'Mail-Scanner-Setup.exe');
+      dl(new Blob([bytes], {type: 'application/octet-stream'}), `Mail-Scanner-Setup-${installerVersion}.exe`);
     } catch {
       toast('⚠️ تعذّر تنزيل أداة الماسح. حدّث الصفحة ثم أعد المحاولة.');
     } finally {
@@ -178,11 +248,8 @@ const WindowsScanner = (() => {
     $('#winRefresh').onclick = refresh;
     $('#winScanPage').onclick = scan;
     $('#winDownloadSetup').onclick = downloadSetup;
-    const refreshWhileVisible = () => {
-      if (!document.hidden && !$('#p-scan').hidden) refresh();
-    };
-    document.addEventListener('visibilitychange', refreshWhileVisible);
-    setInterval(refreshWhileVisible, 5000);
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('focus', refresh);
   }
 
   return {init, refresh};
