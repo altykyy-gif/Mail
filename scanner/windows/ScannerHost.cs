@@ -7,6 +7,7 @@ using System.Web.Script.Serialization;
 
 internal static class ScannerHost
 {
+    private const string Version = "1.0.3";
     private const int MaxRequestBytes = 16 * 1024;
     private const int MaxImageBytes = 16 * 1024 * 1024;
     private const int ImageChunkBytes = 240 * 1024;
@@ -102,7 +103,7 @@ internal static class ScannerHost
             string name = (string)info.Properties["Name"].Value;
             devices.Add(new { id, name });
         }
-        Send(new { type = "devices", devices });
+        Send(new { type = "devices", devices, version = Version });
     }
 
     private static void ScanPage(dynamic infos, string id)
@@ -121,8 +122,9 @@ internal static class ScannerHost
 
             // WIA uses the first child for the flatbed when one is available.
             dynamic item = device.Items[1];
-            ConfigureA4Page(device, item);
+            CaptureArea area = ConfigureA4Page(device, item);
             dynamic image = item.Transfer(JpegFormat);
+            object paper = GetPaperBounds(area, image);
             if (!String.Equals((string)image.FormatID, JpegFormat, StringComparison.OrdinalIgnoreCase))
             {
                 dynamic converter = Activator.CreateInstance(Type.GetTypeFromProgID("WIA.ImageProcess", true));
@@ -150,13 +152,18 @@ internal static class ScannerHost
                 int count = Math.Min(ImageChunkBytes, bytes.Length - offset);
                 Send(new { type = "image", data = Convert.ToBase64String(bytes, offset, count) });
             }
-            Send(new { type = "done" });
+            Send(new { type = "done", paper });
             return;
         }
         SendError("device_missing");
     }
 
-    internal static void ConfigureA4Page(dynamic device, dynamic item)
+    internal struct CaptureArea
+    {
+        internal int PaperWidth, PaperHeight, BedWidth, BedHeight, XDpi, YDpi;
+    }
+
+    internal static CaptureArea ConfigureA4Page(dynamic device, dynamic item)
     {
         Dictionary<int, object> scan = IndexProperties(item.Properties);
         Dictionary<int, object> root = IndexProperties(device.Properties);
@@ -189,20 +196,71 @@ internal static class ScannerHost
         int paperHeight = landscape ? A4WidthMils : A4HeightMils;
         dynamic xExtent = Property(scan, XExtent);
         dynamic yExtent = Property(scan, YExtent);
-        dynamic pageSize = Property(scan, PageSize) ?? Property(root, PageSize);
-        if (SetProperty(pageSize, A4Page) &&
-            MatchesPaperExtent(xExtent, paperWidth, IntValue(xResolution)) &&
-            MatchesPaperExtent(yExtent, paperHeight, IntValue(yResolution)))
-            return;
-
-        // Some flatbed drivers expose only the pixel bounds and ignore page presets.
-        SetProperty(pageSize, CustomPage);
         dynamic xPosition = Property(scan, XPosition);
         dynamic yPosition = Property(scan, YPosition);
-        SetProperty(xPosition, 0);
-        SetProperty(yPosition, 0);
-        SetPaperExtent(xExtent, paperWidth, bedWidth, IntValue(xResolution), IntValue(xPosition));
-        SetPaperExtent(yExtent, paperHeight, bedHeight, IntValue(yResolution), IntValue(yPosition));
+        dynamic pageSize = Property(scan, PageSize) ?? Property(root, PageSize);
+        bool preset = SetProperty(pageSize, A4Page) &&
+            MatchesPaperExtent(xExtent, paperWidth, IntValue(xResolution)) &&
+            MatchesPaperExtent(yExtent, paperHeight, IntValue(yResolution));
+        if (!preset)
+        {
+            // Some flatbed drivers expose only the pixel bounds and ignore page presets.
+            SetProperty(pageSize, CustomPage);
+            SetProperty(xPosition, 0);
+            SetProperty(yPosition, 0);
+            SetPaperExtent(xExtent, paperWidth, bedWidth, IntValue(xResolution), IntValue(xPosition));
+            SetPaperExtent(yExtent, paperHeight, bedHeight, IntValue(yResolution), IntValue(yPosition));
+        }
+        return new CaptureArea {
+            PaperWidth = paperWidth, PaperHeight = paperHeight,
+            BedWidth = bedWidth, BedHeight = bedHeight,
+            XDpi = IntValue(xResolution), YDpi = IntValue(yResolution)
+        };
+    }
+
+    internal static object GetPaperBounds(CaptureArea area, dynamic image)
+    {
+        int xDpi = area.XDpi;
+        int yDpi = area.YDpi;
+        try
+        {
+            int imageWidth = (int)image.Width;
+            int imageHeight = (int)image.Height;
+            int imageXDpi = (int)Math.Round((double)image.HorizontalResolution);
+            int imageYDpi = (int)Math.Round((double)image.VerticalResolution);
+            // A JPEG can carry a default DPI. Use it only when both dimensions
+            // agree with a known physical area and the WIA setting does not.
+            if (imageXDpi >= 25 && imageXDpi <= 2400 && imageYDpi >= 25 && imageYDpi <= 2400 &&
+                FitsScanArea(area, imageWidth, imageHeight, imageXDpi, imageYDpi) &&
+                !FitsScanArea(area, imageWidth, imageHeight, xDpi, yDpi))
+            {
+                xDpi = imageXDpi;
+                yDpi = imageYDpi;
+            }
+        }
+        catch (COMException)
+        {
+            // The selected WIA resolution is still available without image metadata.
+        }
+
+        return new {
+            width = PaperPixels(area.PaperWidth, Math.Max(0, xDpi)),
+            height = PaperPixels(area.PaperHeight, Math.Max(0, yDpi)),
+            landscape = area.PaperWidth > area.PaperHeight
+        };
+    }
+
+    private static bool FitsScanArea(CaptureArea area, int width, int height, int xDpi, int yDpi)
+    {
+        return xDpi > 0 && yDpi > 0 &&
+            ((CloseToExtent(width, area.PaperWidth, xDpi) && CloseToExtent(height, area.PaperHeight, yDpi)) ||
+             (CloseToExtent(width, area.BedWidth, xDpi) && CloseToExtent(height, area.BedHeight, yDpi)));
+    }
+
+    private static bool CloseToExtent(int actual, int mils, int dpi)
+    {
+        int expected = PaperPixels(mils, dpi);
+        return expected > 0 && Math.Abs((long)actual - expected) <= Math.Max(3, expected / 50);
     }
 
     private static Dictionary<int, object> IndexProperties(dynamic properties)
